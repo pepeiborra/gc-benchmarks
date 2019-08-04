@@ -1,6 +1,6 @@
 # Having a play with the new GHC incremental garbage collector
 
-GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it in MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present a net improvement on the solution using [compact regions][2].
+GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it in MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions.
 
 ## Benchmark methodology
 To build GHC, I checked out the branch `wip/gc/ghc-8.8-rebase` and rebased it again on top of 8.8, including submodules, then just `./boot && ./configure && make -j4`. I didn't bother installing it, using the `inplace/bin/ghc-state2` binary directly. 
@@ -75,9 +75,11 @@ In my benchmarks, the incremental collector did not have any impact on the run t
 
 ## Conclusion
 
-The new incremental garbage collector will make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. It is currently [under review][5] for merging to GHC HEAD and hopefully will make it in time for the 8.10 release.
+The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag.
 
-Finally, an obligatory disclaimer. The work on the incremental garbage collector for GHC has been sponsored by my employer, Standard Chartered, and all the views expressed in this blog post are my own and not that of my employer. 
+The incremental garbage collector will hopefully make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. It is currently [under review][5] for merging to GHC HEAD.
+
+Finally, an obligatory disclaimer. The work carried out by Well-Typed has been sponsored by my employer, Standard Chartered. All the views expressed in this blog post are my own and not that of my employer. 
 
 [1]: https://www.youtube.com/watch?v=7_ig6r2C-d4
 [2]: https://www.reddit.com/r/haskell/comments/81r6z0/trying_out_ghc_compact_regions_for_improved/
