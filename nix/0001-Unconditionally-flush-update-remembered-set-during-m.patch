@@ -1,0 +1,39 @@
+From a3f7dd2828ca456311d8d5eab433c0f7b88e5ae1 Mon Sep 17 00:00:00 2001
+From: Ben Gamari <ben@smart-cactus.org>
+Date: Wed, 8 May 2019 21:28:35 -0400
+Subject: [PATCH] Unconditionally flush update remembered set during minor GC
+
+Flush the update remembered set. The goal here is to flush periodically to
+ensure that we don't end up with a thread who marks their stack on their
+local update remembered set and doesn't flush until the nonmoving sync
+period as this would result in a large fraction of the heap being marked
+during the sync pause.
+---
+ rts/sm/GC.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/rts/sm/GC.c b/rts/sm/GC.c
+index 0e80ec40fe..699c01550d 100644
+--- a/rts/sm/GC.c
++++ b/rts/sm/GC.c
+@@ -734,6 +734,17 @@ GarbageCollect (uint32_t collect_gen,
+     }
+   } // for all generations
+ 
++  // Flush the update remembered set. The goal here is to flush periodically to
++  // ensure that we don't end up with a thread who marks their stack on their
++  // local update remembered set and doesn't flush until the nonmoving sync
++  // period as this would result in a large fraction of the heap being marked
++  // during the sync pause.
++  if (RtsFlags.GcFlags.useNonmoving) {
++      RELEASE_SM_LOCK;
++      nonmovingAddUpdRemSetBlocks(&gct->cap->upd_rem_set.queue);
++      ACQUIRE_SM_LOCK;
++  }
++
+   // Mark and sweep the oldest generation.
+   // N.B. This can only happen after we've moved
+   // oldest_gen->scavenged_large_objects back to oldest_gen->large_objects.
+-- 
+2.19.2
+

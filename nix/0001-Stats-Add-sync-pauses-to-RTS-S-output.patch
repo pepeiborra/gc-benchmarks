@@ -1,0 +1,26 @@
+From 79e192af774d576597d61b6437ba7c163b212b85 Mon Sep 17 00:00:00 2001
+From: Ben Gamari <ben@smart-cactus.org>
+Date: Thu, 1 Aug 2019 09:12:03 -0400
+Subject: [PATCH] Stats: Add sync pauses to +RTS -S output
+
+---
+ rts/Stats.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/rts/Stats.c b/rts/Stats.c
+index c8245a1dbf..24dbe5b665 100644
+--- a/rts/Stats.c
++++ b/rts/Stats.c
+@@ -344,6 +344,9 @@ stat_endNonmovingGcSync ()
+     stats.nonmoving_gc_sync_max_elapsed_ns =
+       stg_max(stats.gc.nonmoving_gc_sync_elapsed_ns,
+               stats.nonmoving_gc_sync_max_elapsed_ns);
++    if (RtsFlags.GcFlags.giveStats == VERBOSE_GC_STATS) {
++      statsPrintf("# sync %6.3f\n", TimeToSecondsDbl(stats.gc.nonmoving_gc_sync_elapsed_ns));
++    }
+     traceConcSyncEnd();
+ }
+ 
+-- 
+2.19.2
+
