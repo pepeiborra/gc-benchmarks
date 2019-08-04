@@ -1,13 +1,13 @@
 # Having a play with the new GHC incremental garbage collector
 
-GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it in MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions.
+GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions.
 
 ## Benchmark methodology
 To build GHC, I checked out the branch `wip/gc/ghc-8.8-rebase` and rebased it again on top of 8.8, including submodules, then just `./boot && ./configure && make -j4`. I didn't bother installing it, using the `inplace/bin/ghc-state2` binary directly. 
 
 To test the new incremental garbage collector I turned to the well known [Pusher][3] problem: can the generation 1 GC pauses be short for a program that keeps a large amount of long-lived state in the heap ? The answer currently is no, but there are workarounds like [compact regions][4] that effectively move the data out of the garbage collected heap. These workarounds, however, require modifying or rewriting the program, and usually involve a sacrifice in performance. The new incremental collector should be able to reduce the Gen 1 pauses without any code changes, and I wanted to see how much shorter the pauses are and how much performance is lost.
 
-The code for the Pusher example is very short and included below for convenience: it uses a `Data.Map.Strict` to store up to `_N_` messages in 2000000 iterations. By varying `_N` we can control the size of the Haskell heap and relate it to the length of the Gen 1 pauses:
+The code for the Pusher example is very short and included below for convenience: it uses a `Data.Map.Strict` to store up to `_N` messages in 2 million iterations. By varying `_N` we can control the size of the Haskell heap and relate it to the length of the Gen 1 pauses:
 ```
 module Main (main) where
 
@@ -54,7 +54,7 @@ To measure the max gen 1 pause length, I rely on the output of `+RTS -s`. This i
 
 ## Benchmarking pauses
 
-The plot below shows the max length of the Gen 1 pauses, both with the standard(red) and incremental(dotted) GC for various sizes of N.
+The plot below shows the max length of the Gen 1 pauses, both with the standard (red) and incremental (dotted) GC for various sizes of N.
 
 ![][pauses]
 
@@ -69,7 +69,7 @@ For the incremental collector we are looking only at the marking pause. The stan
 
 ## Benchmarking performance
 
-In my benchmarks, the incremental collector did not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the locality advantages enjoyed by the copying collector. 
+In my benchmarks, the incremental collector did not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the locality advantages enjoyed by the copying collector.
 
 ![][runtimes]
 
