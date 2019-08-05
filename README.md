@@ -90,7 +90,7 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [3]: https://stackoverflow.com/questions/36772017/reducing-garbage-collection-pause-time-in-a-haskell-program
 [4]: http://hackage.haskell.org/package/compact-0.1.0.1
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
-[pauses]: pauses.svg
-[runtimes]: runtimes.svg
+[pauses]: pauses.bs.svg
+[runtimes]: runtimes.bs.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib
