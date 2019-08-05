@@ -86,6 +86,6 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [3]: https://stackoverflow.com/questions/36772017/reducing-garbage-collection-pause-time-in-a-haskell-program
 [4]: http://hackage.haskell.org/package/compact-0.1.0.1
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
-[pauses]: https://pepeiborra.files.wordpress.com/2019/08/pauses-e1564949023768.png
-[runtimes]: https://pepeiborra.files.wordpress.com/2019/08/runtimes-e1564948995727.png
+[pauses]: pauses.svg
+[runtimes]: runtimes.svg
 [nix]: http://pepeiborra.github.com/gc-benchmarks/default.nix
