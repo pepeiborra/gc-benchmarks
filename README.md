@@ -1,4 +1,4 @@
-# Having a play with the new GHC incremental garbage collector
+# Shorter GC pauses for free
 
 GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions. All the experiments are reproducible via a [Nix expression][nix] that will build the GHC branch, run the benchmarks and extract the graphs.
 
