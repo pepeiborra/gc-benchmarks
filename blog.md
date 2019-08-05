@@ -1,6 +1,6 @@
 # Having a play with the new GHC incremental garbage collector
 
-GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions.
+GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, instead of the standard copy strategy. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, in this post we benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions. All the experiments are reproducible via a [Nix expression][nix] that will build the GHC branch, run the benchmarks and extract the graphs.
 
 ## Benchmark methodology
 To build GHC, I checked out the branch `wip/gc/ghc-8.8-rebase` and rebased it again on top of 8.8, including submodules, then just `./boot && ./configure && make -j4`. I didn't bother installing it, using the `inplace/bin/ghc-state2` binary directly. 
@@ -54,7 +54,7 @@ To measure the max gen 1 pause length, I rely on the output of `+RTS -s`. This i
 
 ## Benchmarking pauses
 
-The plot below shows the max length of the Gen 1 pauses, both with the standard (red) and incremental (dotted) GC for various sizes of N.
+The graph below shows the max length of the Gen 1 pauses per dataset size, both with the standard (red) and incremental (dotted) GC for various sizes of N.
 
 ![][pauses]
 
@@ -69,7 +69,7 @@ For the incremental collector we are looking only at the marking pause. The stan
 
 ## Benchmarking performance
 
-In my benchmarks, the incremental collector did not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the locality advantages enjoyed by the copying collector.
+As far as I can see, the incremental collector does not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the costs and any disadvantages due to lower cache locality. The graph below shows the runtimes for each collector per dataset size:
 
 ![][runtimes]
 
@@ -88,3 +88,4 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
 [pauses]: https://pepeiborra.files.wordpress.com/2019/08/pauses-e1564949023768.png
 [runtimes]: https://pepeiborra.files.wordpress.com/2019/08/runtimes-e1564948995727.png
+[nix]: http://pepeiborra.github.com/gc-benchmarks/default.nix
