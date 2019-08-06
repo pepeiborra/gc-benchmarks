@@ -7,7 +7,7 @@ let
   overlay = import ./nix/overlay.nix;
 in with (import nixpkgs {overlays = [overlay];});
 let
-  shakeGhc = haskellPackages.ghcWithPackages(p: [p.shake]);
+  shakeGhc = haskellPackages.ghcWithPackages(p: [p.shake p.generic-deriving p.split]);
   shakeBuilder = stdenv.mkDerivation {
     name = "shakeBuilder";
     src = ./.;

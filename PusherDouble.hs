@@ -26,5 +26,5 @@ pushMsg n chan (Msg msgId msgContent) =
 
 main :: IO ()
 main = do
-  [(2 *) .  read -> n] <- getArgs
-  Monad.foldM_ (pushMsg n) Map.empty (map message [1..n*5])
+  [(2 *) .  read -> n, read -> m] <- getArgs
+  Monad.foldM_ (pushMsg n) Map.empty (map message [1..n*m])

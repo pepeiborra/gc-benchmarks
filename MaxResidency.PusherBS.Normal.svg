@@ -5,6 +5,7 @@
 <desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
 <rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
 <g id="content" transform="translate(0,1) scale(1,-1) scale(0.00024414) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<text transform="translate(731.01,3451.9) scale(1,-1) scale(8.6016) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >MaxResidency by GC - PusherBS</text>
 <rect x="819.2" y="819.2" width="2457.6" height="2457.6" stroke-width="4.8188" />
 <text transform="translate(783.33,662.21) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >0</text>
 <line x1="819.2" y1="3276.8" x2="819.2" y2="3227.6" stroke-width="4.8188" />
@@ -33,22 +34,22 @@
 <text transform="translate(710.6,773.65) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >0</text>
 <line x1="3276.8" y1="819.2" x2="3227.6" y2="819.2" stroke-width="4.8188" />
 <line x1="819.2" y1="819.2" x2="868.35" y2="819.2" stroke-width="4.8188" />
-<text transform="translate(427.23,1388.1) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >5</text>
+<text transform="translate(427.23,1388.1) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >1</text>
 <text transform="translate(520.47,1388.1) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >×10</text>
-<text transform="translate(739.29,1436.4) scale(1,-1) scale(3.8707) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >8</text>
+<text transform="translate(739.29,1436.4) scale(1,-1) scale(3.8707) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >9</text>
 <line x1="3276.8" y1="1433.6" x2="3227.6" y2="1433.6" stroke-width="4.8188" />
 <line x1="819.2" y1="1433.6" x2="868.35" y2="1433.6" stroke-width="4.8188" />
-<text transform="translate(319.62,2002.5) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >1.0</text>
+<text transform="translate(427.23,2002.5) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >2</text>
 <text transform="translate(520.47,2002.5) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >×10</text>
 <text transform="translate(739.29,2050.8) scale(1,-1) scale(3.8707) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >9</text>
 <line x1="3276.8" y1="2048" x2="3227.6" y2="2048" stroke-width="4.8188" />
 <line x1="819.2" y1="2048" x2="868.35" y2="2048" stroke-width="4.8188" />
-<text transform="translate(319.62,2616.9) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >1.5</text>
+<text transform="translate(427.23,2616.9) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >3</text>
 <text transform="translate(520.47,2616.9) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >×10</text>
 <text transform="translate(739.29,2665.2) scale(1,-1) scale(3.8707) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >9</text>
 <line x1="3276.8" y1="2662.4" x2="3227.6" y2="2662.4" stroke-width="4.8188" />
 <line x1="819.2" y1="2662.4" x2="868.35" y2="2662.4" stroke-width="4.8188" />
-<text transform="translate(319.62,3231.3) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >2.0</text>
+<text transform="translate(427.23,3231.3) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >4</text>
 <text transform="translate(520.47,3231.3) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >×10</text>
 <text transform="translate(739.29,3279.6) scale(1,-1) scale(3.8707) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >9</text>
 <line x1="3276.8" y1="3276.8" x2="3227.6" y2="3276.8" stroke-width="4.8188" />
@@ -96,64 +97,64 @@
 <line x1="3276.8" y1="3276.8" x2="3257.1" y2="3276.8" stroke-width="4.8188" />
 <line x1="819.2" y1="3276.8" x2="838.86" y2="3276.8" stroke-width="4.8188" />
 <text transform="translate(1686,501.24) scale(1,-1) scale(6.4512) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >Map size (K)</text>
-<text transform="matrix(0 6.4512 6.4512 0 185.7 1392) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >Max Residency (bytes)</text>
-<line x1="836.75" y1="801.13" x2="836.75" y2="847.21" stroke="red" stroke-width="2.304" />
-<line x1="836.75" y1="824.17" x2="856.71" y2="835.69" stroke="red" stroke-width="2.304" />
-<line x1="836.75" y1="824.17" x2="816.8" y2="812.65" stroke="red" stroke-width="2.304" />
-<line x1="836.75" y1="824.17" x2="856.71" y2="812.65" stroke="red" stroke-width="2.304" />
-<line x1="836.75" y1="824.17" x2="816.8" y2="835.69" stroke="red" stroke-width="2.304" />
-<line x1="854.31" y1="806.05" x2="854.31" y2="852.13" stroke="red" stroke-width="2.304" />
-<line x1="854.31" y1="829.09" x2="874.26" y2="840.61" stroke="red" stroke-width="2.304" />
-<line x1="854.31" y1="829.09" x2="834.36" y2="817.57" stroke="red" stroke-width="2.304" />
-<line x1="854.31" y1="829.09" x2="874.26" y2="817.57" stroke="red" stroke-width="2.304" />
-<line x1="854.31" y1="829.09" x2="834.36" y2="840.61" stroke="red" stroke-width="2.304" />
-<line x1="889.42" y1="815.88" x2="889.42" y2="861.96" stroke="red" stroke-width="2.304" />
-<line x1="889.42" y1="838.92" x2="909.37" y2="850.44" stroke="red" stroke-width="2.304" />
-<line x1="889.42" y1="838.92" x2="869.46" y2="827.4" stroke="red" stroke-width="2.304" />
-<line x1="889.42" y1="838.92" x2="909.37" y2="827.4" stroke="red" stroke-width="2.304" />
-<line x1="889.42" y1="838.92" x2="869.46" y2="850.44" stroke="red" stroke-width="2.304" />
-<line x1="959.63" y1="835.54" x2="959.63" y2="881.62" stroke="red" stroke-width="2.304" />
-<line x1="959.63" y1="858.58" x2="979.59" y2="870.1" stroke="red" stroke-width="2.304" />
-<line x1="959.63" y1="858.58" x2="939.68" y2="847.06" stroke="red" stroke-width="2.304" />
-<line x1="959.63" y1="858.58" x2="979.59" y2="847.06" stroke="red" stroke-width="2.304" />
-<line x1="959.63" y1="858.58" x2="939.68" y2="870.1" stroke="red" stroke-width="2.304" />
-<line x1="1100.1" y1="874.86" x2="1100.1" y2="920.94" stroke="red" stroke-width="2.304" />
-<line x1="1100.1" y1="897.9" x2="1120" y2="909.42" stroke="red" stroke-width="2.304" />
-<line x1="1100.1" y1="897.9" x2="1080.1" y2="886.38" stroke="red" stroke-width="2.304" />
-<line x1="1100.1" y1="897.9" x2="1120" y2="886.38" stroke="red" stroke-width="2.304" />
-<line x1="1100.1" y1="897.9" x2="1080.1" y2="909.42" stroke="red" stroke-width="2.304" />
-<line x1="1380.9" y1="953.5" x2="1380.9" y2="999.58" stroke="red" stroke-width="2.304" />
-<line x1="1380.9" y1="976.54" x2="1400.9" y2="988.06" stroke="red" stroke-width="2.304" />
-<line x1="1380.9" y1="976.54" x2="1361" y2="965.02" stroke="red" stroke-width="2.304" />
-<line x1="1380.9" y1="976.54" x2="1400.9" y2="965.02" stroke="red" stroke-width="2.304" />
-<line x1="1380.9" y1="976.54" x2="1361" y2="988.06" stroke="red" stroke-width="2.304" />
-<line x1="1942.7" y1="1110.8" x2="1942.7" y2="1156.9" stroke="red" stroke-width="2.304" />
-<line x1="1942.7" y1="1133.8" x2="1962.6" y2="1145.4" stroke="red" stroke-width="2.304" />
-<line x1="1942.7" y1="1133.8" x2="1922.7" y2="1122.3" stroke="red" stroke-width="2.304" />
-<line x1="1942.7" y1="1133.8" x2="1962.6" y2="1122.3" stroke="red" stroke-width="2.304" />
-<line x1="1942.7" y1="1133.8" x2="1922.7" y2="1145.4" stroke="red" stroke-width="2.304" />
-<line x1="3066.1" y1="1425.4" x2="3066.1" y2="1471.4" stroke="red" stroke-width="2.304" />
-<line x1="3066.1" y1="1448.4" x2="3086.1" y2="1459.9" stroke="red" stroke-width="2.304" />
-<line x1="3066.1" y1="1448.4" x2="3046.2" y2="1436.9" stroke="red" stroke-width="2.304" />
-<line x1="3066.1" y1="1448.4" x2="3086.1" y2="1436.9" stroke="red" stroke-width="2.304" />
-<line x1="3066.1" y1="1448.4" x2="3046.2" y2="1459.9" stroke="red" stroke-width="2.304" />
-<polyline points="836.75,824.17 854.31,829.09 889.42,838.92 959.63,858.58 1100.1,897.9 1380.9,976.54 1942.7,1133.8 3066.1,1448.4 " stroke="red" stroke-width="4.8188" />
-<line x1="813.71" y1="812.6" x2="859.79" y2="858.68" stroke-width="2.304" />
-<line x1="859.79" y1="812.6" x2="813.71" y2="858.68" stroke-width="2.304" />
-<line x1="831.27" y1="827.98" x2="877.35" y2="874.06" stroke-width="2.304" />
-<line x1="877.35" y1="827.98" x2="831.27" y2="874.06" stroke-width="2.304" />
-<line x1="866.38" y1="856.62" x2="912.46" y2="902.7" stroke-width="2.304" />
-<line x1="912.46" y1="856.62" x2="866.38" y2="902.7" stroke-width="2.304" />
-<line x1="936.59" y1="932.01" x2="982.67" y2="978.09" stroke-width="2.304" />
-<line x1="982.67" y1="932.01" x2="936.59" y2="978.09" stroke-width="2.304" />
-<line x1="1077" y1="1023.3" x2="1123.1" y2="1069.4" stroke-width="2.304" />
-<line x1="1123.1" y1="1023.3" x2="1077" y2="1069.4" stroke-width="2.304" />
-<line x1="1357.9" y1="1378.8" x2="1404" y2="1424.9" stroke-width="2.304" />
-<line x1="1404" y1="1378.8" x2="1357.9" y2="1424.9" stroke-width="2.304" />
-<line x1="1919.6" y1="1656.5" x2="1965.7" y2="1702.6" stroke-width="2.304" />
-<line x1="1965.7" y1="1656.5" x2="1919.6" y2="1702.6" stroke-width="2.304" />
-<line x1="3043.1" y1="3089" x2="3089.2" y2="3135.1" stroke-width="2.304" />
-<line x1="3089.2" y1="3089" x2="3043.1" y2="3135.1" stroke-width="2.304" />
-<polyline points="836.75,835.64 854.31,851.02 889.42,879.66 959.63,955.05 1100.1,1046.4 1380.9,1401.8 1942.7,1679.6 3066.1,3112 " stroke-width="4.8188" stroke-dasharray="4.8188, 14.456" />
+<text transform="matrix(0 6.4512 6.4512 0 309.45 1625) " font-family="Helvetica,sans-serif" font-size="20px" stroke="none" fill="black" >MaxResidency</text>
+<line x1="836.75" y1="814.26" x2="836.75" y2="860.34" stroke="red" stroke-width="2.304" />
+<line x1="836.75" y1="837.3" x2="856.71" y2="848.82" stroke="red" stroke-width="2.304" />
+<line x1="836.75" y1="837.3" x2="816.8" y2="825.78" stroke="red" stroke-width="2.304" />
+<line x1="836.75" y1="837.3" x2="856.71" y2="825.78" stroke="red" stroke-width="2.304" />
+<line x1="836.75" y1="837.3" x2="816.8" y2="848.82" stroke="red" stroke-width="2.304" />
+<line x1="854.31" y1="832.32" x2="854.31" y2="878.4" stroke="red" stroke-width="2.304" />
+<line x1="854.31" y1="855.36" x2="874.26" y2="866.88" stroke="red" stroke-width="2.304" />
+<line x1="854.31" y1="855.36" x2="834.36" y2="843.84" stroke="red" stroke-width="2.304" />
+<line x1="854.31" y1="855.36" x2="874.26" y2="843.84" stroke="red" stroke-width="2.304" />
+<line x1="854.31" y1="855.36" x2="834.36" y2="866.88" stroke="red" stroke-width="2.304" />
+<line x1="889.42" y1="868.45" x2="889.42" y2="914.53" stroke="red" stroke-width="2.304" />
+<line x1="889.42" y1="891.49" x2="909.37" y2="903.01" stroke="red" stroke-width="2.304" />
+<line x1="889.42" y1="891.49" x2="869.46" y2="879.97" stroke="red" stroke-width="2.304" />
+<line x1="889.42" y1="891.49" x2="909.37" y2="879.97" stroke="red" stroke-width="2.304" />
+<line x1="889.42" y1="891.49" x2="869.46" y2="903.01" stroke="red" stroke-width="2.304" />
+<line x1="959.63" y1="940.7" x2="959.63" y2="986.78" stroke="red" stroke-width="2.304" />
+<line x1="959.63" y1="963.74" x2="979.59" y2="975.26" stroke="red" stroke-width="2.304" />
+<line x1="959.63" y1="963.74" x2="939.68" y2="952.22" stroke="red" stroke-width="2.304" />
+<line x1="959.63" y1="963.74" x2="979.59" y2="952.22" stroke="red" stroke-width="2.304" />
+<line x1="959.63" y1="963.74" x2="939.68" y2="975.26" stroke="red" stroke-width="2.304" />
+<line x1="1100.1" y1="1085.2" x2="1100.1" y2="1131.3" stroke="red" stroke-width="2.304" />
+<line x1="1100.1" y1="1108.2" x2="1120" y2="1119.8" stroke="red" stroke-width="2.304" />
+<line x1="1100.1" y1="1108.2" x2="1080.1" y2="1096.7" stroke="red" stroke-width="2.304" />
+<line x1="1100.1" y1="1108.2" x2="1120" y2="1096.7" stroke="red" stroke-width="2.304" />
+<line x1="1100.1" y1="1108.2" x2="1080.1" y2="1119.8" stroke="red" stroke-width="2.304" />
+<line x1="1380.9" y1="1374.2" x2="1380.9" y2="1420.3" stroke="red" stroke-width="2.304" />
+<line x1="1380.9" y1="1397.3" x2="1400.9" y2="1408.8" stroke="red" stroke-width="2.304" />
+<line x1="1380.9" y1="1397.3" x2="1361" y2="1385.7" stroke="red" stroke-width="2.304" />
+<line x1="1380.9" y1="1397.3" x2="1400.9" y2="1385.7" stroke="red" stroke-width="2.304" />
+<line x1="1380.9" y1="1397.3" x2="1361" y2="1408.8" stroke="red" stroke-width="2.304" />
+<line x1="1942.7" y1="1952.2" x2="1942.7" y2="1998.3" stroke="red" stroke-width="2.304" />
+<line x1="1942.7" y1="1975.3" x2="1962.6" y2="1986.8" stroke="red" stroke-width="2.304" />
+<line x1="1942.7" y1="1975.3" x2="1922.7" y2="1963.8" stroke="red" stroke-width="2.304" />
+<line x1="1942.7" y1="1975.3" x2="1962.6" y2="1963.8" stroke="red" stroke-width="2.304" />
+<line x1="1942.7" y1="1975.3" x2="1922.7" y2="1986.8" stroke="red" stroke-width="2.304" />
+<line x1="3066.1" y1="3108.3" x2="3066.1" y2="3154.4" stroke="red" stroke-width="2.304" />
+<line x1="3066.1" y1="3131.3" x2="3086.1" y2="3142.9" stroke="red" stroke-width="2.304" />
+<line x1="3066.1" y1="3131.3" x2="3046.2" y2="3119.8" stroke="red" stroke-width="2.304" />
+<line x1="3066.1" y1="3131.3" x2="3086.1" y2="3119.8" stroke="red" stroke-width="2.304" />
+<line x1="3066.1" y1="3131.3" x2="3046.2" y2="3142.9" stroke="red" stroke-width="2.304" />
+<polyline points="836.75,837.3 854.31,855.36 889.42,891.49 959.63,963.74 1100.1,1108.2 1380.9,1397.3 1942.7,1975.3 3066.1,3131.3 " stroke="red" stroke-width="4.8188" />
+<line x1="813.71" y1="810.18" x2="859.79" y2="856.26" stroke-width="2.304" />
+<line x1="859.79" y1="810.18" x2="813.71" y2="856.26" stroke-width="2.304" />
+<line x1="831.27" y1="823.66" x2="877.35" y2="869.74" stroke-width="2.304" />
+<line x1="877.35" y1="823.66" x2="831.27" y2="869.74" stroke-width="2.304" />
+<line x1="866.38" y1="850.46" x2="912.46" y2="896.54" stroke-width="2.304" />
+<line x1="912.46" y1="850.46" x2="866.38" y2="896.54" stroke-width="2.304" />
+<line x1="936.59" y1="902.87" x2="982.67" y2="948.95" stroke-width="2.304" />
+<line x1="982.67" y1="902.87" x2="936.59" y2="948.95" stroke-width="2.304" />
+<line x1="1077" y1="1013.5" x2="1123.1" y2="1059.6" stroke-width="2.304" />
+<line x1="1123.1" y1="1013.5" x2="1077" y2="1059.6" stroke-width="2.304" />
+<line x1="1357.9" y1="1217.9" x2="1404" y2="1264" stroke-width="2.304" />
+<line x1="1404" y1="1217.9" x2="1357.9" y2="1264" stroke-width="2.304" />
+<line x1="1919.6" y1="1632.4" x2="1965.7" y2="1678.5" stroke-width="2.304" />
+<line x1="1965.7" y1="1632.4" x2="1919.6" y2="1678.5" stroke-width="2.304" />
+<line x1="3043.1" y1="2472.4" x2="3089.2" y2="2518.4" stroke-width="2.304" />
+<line x1="3089.2" y1="2472.4" x2="3043.1" y2="2518.4" stroke-width="2.304" />
+<polyline points="836.75,833.22 854.31,846.7 889.42,873.5 959.63,925.91 1100.1,1036.6 1380.9,1240.9 1942.7,1655.4 3066.1,2495.4 " stroke-width="4.8188" stroke-dasharray="4.8188, 14.456" />
 </g>
 </svg>

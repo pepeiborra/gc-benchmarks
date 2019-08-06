@@ -88,21 +88,25 @@ It is entirely possible that I am overlooking something here. More benchmarks wo
 
 ### Memory
 
-One last question: what effect does the new collector have on the total memory footprint of our process? To measure this, I again rely on the output of `+RTS -s`, concretely on the "maximum residency" line. The results are quite interesting, it turns out the new collector uses less memory than the copy collector for the bytestrings example. 
+What effect does the new collector have on the total memory footprint of our process? To measure this, I again rely on the output of `+RTS -s`, concretely on the "maximum residency" line. The results are quite interesting. Encouragingly, the new collector uses less memory than the copy collector for the bytestrings example. 
 
 ![][maxResidency]
 
-Again, this behaviour is specific to bytestrings. If we replace them with doubles, the new collector requires quite a bit more memory than the copy collector. 
+However, this behaviour is specific to bytestrings. If we look at the version using doubles, the new collector requires quite a bit more memory than the copy collector. 
 
 ![][maxResidency.double]
 
 It's a bit surprising that the behaviour is so different between the two examples.
 
+Far more worryingly though, the memory usage is linear with the number of iterations in our main loop. This is shown by the chart below which shows the maximum residency per dataset size under the incremental collector for two different number of iterations. The two lines should be identical, as it is the case for the standard copy collector, but the graph shows how the two lines differ, with the version with a higher count of iterations using more memory. This constitutes a memory leak and is probably a bug of the current implementation.
+
+![][maxResidencyPerIterations]
+
 ## Conclusion
 
 The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag.
 
-All in all, the incremental garbage collector will hopefully make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. It is currently [under review][5] for merging to GHC HEAD.
+An incremental garbage collector like this one would make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. However, the collector is still [under review][5] for merging to GHC HEAD, and more information is needed on the max residency issue.
 
 Finally, an obligatory disclaimer. The work carried out by Well-Typed has been sponsored by my employer, Standard Chartered. All the views expressed in this blog post are my own and not that of my employer. 
 
@@ -111,11 +115,12 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [3]: https://stackoverflow.com/questions/36772017/reducing-garbage-collection-pause-time-in-a-haskell-program
 [4]: http://hackage.haskell.org/package/compact-0.1.0.1
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
-[pauses]: pauses.bs.svg
-[runtimes]: runtimes.bs.svg
-[maxResidency]: maxResidency.bs.svg
-[maxResidency.double]: maxResidency.double.svg
-[pauses.double]: pauses.double.svg
-[runtimes.double]: runtimes.double.svg
+[pauses]: Pauses.PusherBS.Normal.svg
+[pauses.double]: Pauses.PusherDouble.Normal.svg
+[runtimes]: Runtimes.PusherBS.Normal.svg
+[runtimes.double]: Runtimes.PusherDouble.Normal.svg
+[maxResidency]: MaxResidency.PusherBS.Normal.svg
+[maxResidency.double]: MaxResidency.PusherDouble.Normal.svg
+[maxResidencyPerIterations]: MaxResidency.PusherDouble.Incremental.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib
