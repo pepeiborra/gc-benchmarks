@@ -52,7 +52,8 @@ To measure the max gen 1 pause length, I rely on the output of `+RTS -s`. This i
 
 `Gen 1` now gets two extra lines showing (1b) the time spent in sync pauses (after sweeping) and (1c) the time spent in concurrent sweeping. Note that (1c) is *not* a pause regardless of what the header says. Finally, my understanding is that (1a) shows the time spent marking, which is indeed a blocking pause.
 
-## Benchmarking pauses
+## Results
+### Pauses
 
 The graph below shows the max length of the Gen 1 pauses per dataset size, both with the standard (red) and incremental (dotted) GC for various sizes of N.
 
@@ -67,15 +68,35 @@ For the incremental collector the graph is showing the length of the marking pau
 > preparatory collection pause scales linearly with the size of the test's queue. 
 > In my experience it is rather unusual for programs to carry around millions of large and pinned bytearrays.
 
-So the new collector is managing a 5-fold improvement on a worst case scenario, not too bad.
+So the new collector is managing a 5-fold improvement on a worst case scenario. That's not bad but let's check the non worst case situation. Replacing the bytestrings with doubles and repeating the experiment yields:
 
-## Benchmarking performance
+![][pauses.double]
+
+The pauses with the new collector are pretty much independent of the size of the surviving set, as promised. Awesome!
+
+### Runtimes
 
 As far as I can see, the incremental collector does not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the costs and any disadvantages due to lower cache locality. The graph below shows the runtimes for each collector per dataset size:
 
 ![][runtimes]
 
+If we replace the bytestrings with doubles, the outcome is the same:
+
+![][runtimes.double]
+
 It is entirely possible that I am overlooking something here. More benchmarks would be needed to confirm this result, probably involving the well-known [nofib][nofib] suite.
+
+### Memory
+
+One last question: what effect does the new collector have on the total memory footprint of our process? To measure this, I again rely on the output of `+RTS -s`, concretely on the "maximum residency" line. The results are quite interesting, it turns out the new collector uses less memory than the copy collector for the bytestrings example. 
+
+![][maxResidency]
+
+Again, this behaviour is specific to bytestrings. If we replace them with doubles, the new collector requires quite a bit more memory than the copy collector. 
+
+![][maxResidency.double]
+
+It's a bit surprising that the behaviour is so different between the two examples.
 
 ## Conclusion
 
@@ -92,5 +113,9 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
 [pauses]: pauses.bs.svg
 [runtimes]: runtimes.bs.svg
+[maxResidency]: maxResidency.bs.svg
+[maxResidency.double]: maxResidency.double.svg
+[pauses.double]: pauses.double.svg
+[runtimes.double]: runtimes.double.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib
