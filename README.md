@@ -96,11 +96,17 @@ However, this behaviour is specific to bytestrings. If we look at the version us
 
 ![][maxResidency.double]
 
-It's a bit surprising that the behaviour is so different between the two examples.
-
-Far more worryingly though, the memory usage is linear with the number of iterations in our main loop. This is shown by the chart below which shows the maximum residency per dataset size under the incremental collector for two different number of iterations. The two lines should be identical, as it is the case for the standard copy collector, but the graph shows how the two lines differ, with the version with a higher count of iterations using more memory. This constitutes a memory leak and is probably a bug of the current implementation.
+It's a bit surprising that the behaviour is so different between the two examples. More worryingly though, the memory usage seems to be linear with the number of iterations in our main loop. This is shown by the chart below illustrating the maximum residency per dataset size under the incremental collector for two different number of iterations. The two lines should be identical, as it is the case for the standard copy collector, but the graph shows how the two lines differ, with the version with a higher count of iterations using more memory. What's going on ?
 
 ![][maxResidencyPerIterations]
+
+Drilling into how the heap evolves over time for a concrete example, using the Live bytes column of the `+RTS -S ~RTS` output, we can see that the incremental collector is "lagging behind" the main program, allowing the heap to grow very large without collecting the garbage:
+
+![][liveBytesComparisonDouble]
+
+For some reason this behaviour doesn't appear in the Bytestring example, and the incremental GC is able to collect the heap multiple times concurrently with the main program:
+
+![][liveBytesComparisonBS]
 
 ## Conclusion
 
@@ -122,5 +128,7 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [maxResidency]: MaxResidency.PusherBS.Normal.svg
 [maxResidency.double]: MaxResidency.PusherDouble.Normal.svg
 [maxResidencyPerIterations]: MaxResidency.PusherDouble.Incremental.svg
+[liveBytesComparisonDouble]: Live.800.ExtraIterations.PusherDouble.svg
+[liveBytesComparisonBS]: Live.800.ExtraIterations.PusherBS.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib
