@@ -1,13 +1,15 @@
-# Shorter GC pauses for free
+# Shorter GC pauses coming to GHC
 
-GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, as an alternative to the standard copy collector. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, we can benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging and present an alternative to the [solution][2] using compact regions. All the experiments are reproducible via a [Nix expression][nix] that will build the GHC branch, run the benchmarks and extract the graphs.
+GHC >=8.10 is getting a new incremental garbage collector with a mark&sweep strategy for the older generation collections, as an alternative to the standard copy collector. Incrementality comes from performing the sweep phase concurrently with the mutator (i.e. the program), after a blocking, hopefully short marking phase. Ben Gamari gave a [talk][1] about it at MuniHac last year, please check it for all the details. Now that the collector is publicly available in the GHC repository, we can benchmark it to find out how much shorter the GC pauses are, and what the impact is in performance. The results are quite encouraging, and the new collector might be ready for mainstream use soon. 
+
+All experiments are reproducible via a [Nix expression][nix] and [Shake][shake] script that will build the GHC branch, run the benchmarks and render the graphs.
 
 ## Benchmark methodology
-To build GHC, you can check out the branch `wip/gc/ghc-8.8-rebase`, rebase it again on top of the 8.8 branch (including submodules), and then `./boot && ./configure && make -j4`. The nix script automates all this.
+To build GHC, you can check out the branch `wip/gc/ghc-8.8-rebase`, rebase it again on top of the 8.8 branch (including submodules), and then `./boot && ./configure && make -j4`. This is roughly what the Nix script does, using a pregenerated source snapshot to simplify things.
 
-To test the new incremental garbage collector I use the well known [Pusher][3] problem: can the generation 1 GC pauses be short for a program that keeps a large amount of long-lived state in the heap ? The answer currently is no, but there are workarounds like [compact regions][4] that effectively move the data out of the garbage collected heap. These workarounds, however, require modifying or rewriting the program, and usually involve a sacrifice in performance. The new incremental collector should be able to reduce the Gen 1 pauses without any code changes, and it's time to see how much shorter the pauses are and how much performance is lost.
+To test the new incremental garbage collector I use the well known [Pusher][3] problem: can the generation 1 pauses be short for a program that keeps a large amount of long-lived state in the heap ? The answer with the current garbage collector is no, but there are workarounds like [compact regions][2] that effectively move the data out of the garbage collected heap. These workarounds, however, require modifying or rewriting the program, and usually involve a sacrifice in performance. The new incremental collector should be able to reduce the Gen 1 pauses without any code changes, and I couldn't wait to see how much shorter the pauses are and how much performance is lost.
 
-The code for the Pusher example is very short and included below for convenience: it uses a `Data.Map.Strict` to store up to `_N` messages in 2 million iterations. By varying `_N` we can control the size of the Haskell heap and relate it to the length of the Gen 1 pauses:
+The code for the Pusher example is very short and included below for convenience: it uses a `Data.Map.Strict` to store up to `_N` bytestring messages in 2 million iterations. By varying `_N` we can control the size of the Haskell heap and relate it to the length of the Gen 1 pauses:
 ```
 module Main (main) where
 
@@ -59,7 +61,7 @@ The graph below shows the max length of the Gen 1 pauses per dataset size, both 
 
 ![][pauses]
 
-For the incremental collector the graph is showing the length of the marking pause (1a). In the copy collector case, the pause lengths are linear with _N as expected, and the incremental case the pauses are sub linear with N. On average, the incremental GC pauses are between five and six times shorter than the copying GC pauses. However, at 100ms, is this short enough? I asked Ben Gamari and he said:
+For the incremental collector the graph is showing the length of the marking pause (1a). In the copy collector case, the pause lengths are linear with _N as expected, and sub linear for the incremental collector. On average, the incremental GC pauses are between five and six times shorter than the copying GC pauses. However, at 100ms, is this short enough? I asked Ben Gamari and he said:
 
 >The Pusher benchmark allocates and retains lots of large objects (namely each message carries a large ByteString).
 > However, the cost of the preparatory GC is linear in the number of large
@@ -68,23 +70,25 @@ For the incremental collector the graph is showing the length of the marking pau
 > preparatory collection pause scales linearly with the size of the test's queue. 
 > In my experience it is rather unusual for programs to carry around millions of large and pinned bytearrays.
 
-So the new collector is managing a 5-fold improvement on a worst case scenario. That's not bad but let's check the non worst case situation. Replacing the bytestrings with doubles and repeating the experiment yields:
+So the new collector is managing a 5-fold improvement on a worst case scenario. That's not bad but let's check the non worst case situation too; replacing the bytestrings with doubles yields the following graph:
 
 ![][pauses.double]
 
-The pauses with the new collector are pretty much independent of the size of the surviving set, as promised. Awesome!
+The pauses with the new collector are very short and clearly less-than-linear in the size of the surviving set, as promised.
+Very good!
 
 ### Runtimes
 
-As far as I can see, the incremental collector does not have any impact on the run time. If you think this is too good to be true, that makes two of us. I repeated the benchmarks several times, and run times were consistently similar for both collectors. It seems that the mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, thereby negating the costs and any disadvantages due to lower cache locality. The graph below shows the runtimes for each collector per dataset size:
+In my benchmarks the incremental collector does not have any impact on the run time. If you think this is too good to be true, that makes two of us. The mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, so this performance relies on having an extra CPU core available and will probably not hold if that's not the case.
+
+The graph below shows the runtimes for each collector per dataset size:
 
 ![][runtimes]
 
-If we replace the bytestrings with doubles, the outcome is the same:
+If we replace the bytestrings with doubles, the outcome is pretty much the same:
 
 ![][runtimes.double]
 
-It is entirely possible that I am overlooking something here. More benchmarks would be needed to confirm this result, probably involving the well-known [nofib][nofib] suite.
 
 ### Memory
 
@@ -96,11 +100,11 @@ However, this behaviour is specific to bytestrings. If we look at the version us
 
 ![][maxResidency.double]
 
-It's a bit surprising that the behaviour is so different between the two examples. More worryingly though, the memory usage seems to be linear with the number of iterations in our main loop. This is shown by the chart below illustrating the maximum residency per dataset size under the incremental collector for two different number of iterations. The two lines should be identical, as it is the case for the standard copy collector, but the graph shows how the two lines differ, with the version with a higher count of iterations using more memory. What's going on ?
+It's a bit surprising that the behaviour is so different between the two examples. More worryingly though, the memory usage seems to be linear with the number of iterations in our main loop. This is shown by the chart below illustrating the maximum residency per dataset size under the incremental collector for two different number of iterations. The two lines should be identical, as it is the case for the standard copy collector, but the graph shows the two lines differ, with the ExtraIterations version using more memory. What's going on ?
 
 ![][maxResidencyPerIterations]
 
-Drilling into how the heap evolves over time for a concrete example, using the Live bytes column of the `+RTS -S ~RTS` output, we can see that the incremental collector is "lagging behind" the main program, allowing the heap to grow very large without collecting the garbage:
+Drilling into how the heap evolves over time for a concrete example, using the Live bytes column of the `+RTS -S ~RTS` output, we can see that the incremental collector is "lagging behind" the main program, allowing the heap to grow very large before completing the garbage collection.
 
 ![][liveBytesComparisonDouble]
 
@@ -110,9 +114,9 @@ For some reason this behaviour doesn't appear in the Bytestring example, and the
 
 ## Conclusion
 
-The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag. This holds the potential to make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. However, the collector is still [under review][5] for merging to GHC HEAD, and more information is needed on the max residency issue.
+The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag. This holds the potential to make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. But the collector is still [under review][5] for merging to GHC HEAD, and there are some issues with memory usage.
 
-Finally, an obligatory disclaimer. The work carried out by Well-Typed has been sponsored by my employer, Standard Chartered. All the views expressed in this blog post are my own and not that of my employer. 
+Finally, two obligatory disclaimers. First, these benchmarks are only as accurate as the output of `+RTS -S -RTS`; it's entirely possible that it does not give a full picture in the case of the new collector, as it is still in development. Secondly, I must mention that the work carried out by Well-Typed has been sponsored by my employer, Standard Chartered, but all the views expressed in this blog post are my own and not that of my employer. 
 
 [1]: https://www.youtube.com/watch?v=7_ig6r2C-d4
 [2]: https://www.reddit.com/r/haskell/comments/81r6z0/trying_out_ghc_compact_regions_for_improved/
@@ -126,7 +130,8 @@ Finally, an obligatory disclaimer. The work carried out by Well-Typed has been s
 [maxResidency]: MaxResidency.PusherBS.Normal.svg
 [maxResidency.double]: MaxResidency.PusherDouble.Normal.svg
 [maxResidencyPerIterations]: MaxResidency.PusherDouble.Incremental.svg
-[liveBytesComparisonDouble]: Live.800.ExtraIterations.PusherDouble.svg
-[liveBytesComparisonBS]: Live.800.ExtraIterations.PusherBS.svg
+[liveBytesComparisonDouble]: Live.1600.ExtraIterations.PusherDouble.svg
+[liveBytesComparisonBS]: Live.1600.ExtraIterations.PusherBS.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
+[shake]: https://github.com/pepeiborra/gc-benchmarks/blob/master/Shake.hs
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib
