@@ -61,7 +61,7 @@ The graph below shows the max length of the Gen 1 pauses per dataset size, both 
 
 ![][pauses]
 
-For the incremental collector the graph is showing the length of the marking pause (1a). In the copy collector case, the pause lengths are linear with _N as expected, and sub linear for the incremental collector. On average, the incremental GC pauses are between five and six times shorter than the copying GC pauses. However, at 100ms, is this short enough? I asked Ben Gamari and he said:
+For the incremental collector the graph is showing the length of the marking pause (1a). In the copy collector case, the pause lengths are linear with _N as expected. For the incremental collector pauses are shorter, but still linear. On average, the incremental GC pauses are between five and six times shorter than the copying GC pauses. However, at 100ms, is this short enough? I asked Ben Gamari and he said:
 
 >The Pusher benchmark allocates and retains lots of large objects (namely each message carries a large ByteString).
 > However, the cost of the preparatory GC is linear in the number of large
