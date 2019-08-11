@@ -1,15 +1,16 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
-import Development.Shake hiding (Normal)
-import Data.Maybe
-import System.Directory
-import System.FilePath
-import Text.Read
+import qualified Data.ByteString   as BS
+import           Data.Maybe
+import           Development.Shake hiding (Normal)
+import           System.Directory
+import           System.FilePath
+import           Text.Read
 
-import Analysis
+import           Analysis
 
 -- Could be dynamic
 sizes :: [Int]
@@ -18,16 +19,11 @@ sizes = [25, 50, 100, 200, 400, 800, 1600]
 main :: IO ()
 main = shakeArgs shakeOptions $ do
   phony "install" $ do
-    readmeLines <- readFileLines "README.md"
-    let links = map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
-        traces = mapMaybe (readMaybe @Trace) links
-        analyses = mapMaybe (readMaybe @Analysis) links
     Just out <- getEnv "out"
     liftIO $ createDirectoryIfMissing True out
     mapM_ ((\x -> copyFile' x (out </> x)))
       $  (show <$> enumerate @DataSet)
-      ++ (show <$> traces)
-      ++ (show <$> analyses)
+      ++ ["README.html"]
 
   rule @RunLog $ \RunLog {..} out -> do
     need [takeDirectory out </> show program]
@@ -58,6 +54,17 @@ main = shakeArgs shakeOptions $ do
   "PusherDouble" %> \out -> do
     need ["PusherDouble.hs"]
     cmd "ghc" ["-threaded", "-rtsopts", "-O2", "PusherDouble.hs", "-o", out]
+
+  "*.html" %> \out -> do
+    let md = replaceExtension out "md"
+    readmeLines <- readFileLines md
+    let links = map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
+        traces = mapMaybe (readMaybe @Trace) links
+        analyses = mapMaybe (readMaybe @Analysis) links
+    need $ (show <$> traces)
+        ++ (show <$> analyses)
+    Stdout html <- cmd "pandoc" [md]
+    liftIO $ BS.writeFile out html
 
 -- | A helper for defining rules over 'Read'able typed file paths
 rule :: forall a . Read a => (a -> String -> Action ()) -> Rules ()
