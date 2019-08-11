@@ -14,7 +14,18 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 
-module Analysis where
+module Analysis
+  ( RunLog, RunLog_ (..)
+  , DataSet, DataSet_ (..)
+  , Trace
+  , Analysis
+  , GC(..)
+  , Mode(..)
+  , enumerate
+  , parserFor
+  , plotTrace
+  , plotAnalysis
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -45,10 +56,6 @@ parserFor MaxResidency = parseMaxResidency
 data Mode = Normal | ExtraIterations
   deriving (Generic, Bounded, Read, Show)
   deriving (GEq, GEnum) via Default Mode
-
-argMode :: Mode -> [Char]
-argMode Normal = "5"
-argMode ExtraIterations = "10"
 
 -- | Program to run
 data Program = PusherBS | PusherDouble
@@ -199,6 +206,9 @@ instance Read Analysis where
     "svg"     <- many get
     return DataSet{ .. }
 
+-- -----------------------------------------------------------------------------------------------------------
+-- Type Classes
+
 class HasTitle a where title :: a -> String
 instance HasTitle Metric where
   title Runtimes = "Runtime (s)"
@@ -209,8 +219,13 @@ instance HasTitle DataSet where
   title DataSet{..}= show metric <> "-" <> show program <> "-" <> show mode <> "-" <> show gc
 
 instance HasTitle Analysis where
-  title DataSet{..}   = intercalate " - " [show metric, show program, show gc, show mode]
+  title DataSet{..}   = intercalate " - " $ filter (not.null) [show metric, show program, show gc, show mode]
 
+instance HasTitle Trace where
+  title Trace { runLog = RunLog {..}, ..} = intercalate " - "
+    $ filter (not . null) [show traceMetric, show program, show size, show gc, show mode]
+-- ------------------------------------------------------------------------------------------------------------
+-- Functions
 
 parsePause :: String -> [Char]
 parsePause input =
@@ -247,6 +262,7 @@ plotAnalysis analysis out = do
 
 labelDataSetInAnalysis :: Analysis -> DataSet -> String
 labelDataSetInAnalysis an DataSet{..} = intercalate " - " $
+  filter (not.null) $
   [ show metric | OverAll <- [case an of DataSet{..} -> metric]] ++
   [ show program | OverAll <- [case an of DataSet{..} -> program]] ++
   [ show gc | OverAll <- [case an of DataSet{..} -> gc]] ++
@@ -258,7 +274,7 @@ plotTrace t@Trace { traceMetric } out = do
       extract = frameMetric traceMetric
   frames <- mapM loadRunLog runLogs
   liftIO $ E.toFile E.def out $ do
-    E.layout_title .= show traceMetric
+    E.layout_title .= title t
     forM_ (zip runLogs frames) $ \(rl, ff) -> E.plot
       (E.line
         (labelRunLogInTrace t rl)
@@ -268,6 +284,7 @@ plotTrace t@Trace { traceMetric } out = do
 
 labelRunLogInTrace :: Trace -> RunLog -> String
 labelRunLogInTrace trace RunLog{..} = intercalate " - " $
+  filter (not.null) $
   [ show size | OverAll <- [case runLog trace of RunLog{..} -> size]] ++
   [ show program | OverAll <- [case runLog trace of RunLog{..} -> program]] ++
   [ show gc | OverAll <- [case runLog trace of RunLog{..} -> gc]] ++
@@ -280,8 +297,8 @@ frameMetric Live = fromIntegral . live
 frameMetric Elapsed = elapsed
 frameMetric User = user
 
------------------------------
---
+----------------------------------------------------
+-- Dual purpose types for data and analysis
 
 type family HKD (f :: * -> *) a
 type instance HKD Identity a = a

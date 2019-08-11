@@ -70,6 +70,10 @@ main = shakeArgs shakeOptions $ do
 rule :: forall a . Read a => (a -> String -> Action ()) -> Rules ()
 rule k = (isJust . readMaybe @a . takeFileName) ?> \out -> k (read @a (takeFileName out)) out
 
+argMode :: Mode -> [Char]
+argMode Normal = "5"
+argMode ExtraIterations = "10"
+
 -- Local Variables:
 -- dante-methods: (bare-ghci)
 -- End:
