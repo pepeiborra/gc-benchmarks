@@ -201,8 +201,8 @@ instance Read Analysis where
   readPrec = do
     metric  <- (given <$> readPrec <* dot) <|> pure OverAll
     program <- (given <$> readPrec <* dot) <|> pure OverAll
-    gc      <- (given <$> readPrec <* dot) <|> pure OverAll
     mode    <- (given <$> readPrec <* dot) <|> pure OverAll
+    gc      <- (given <$> readPrec <* dot) <|> pure OverAll
     "svg"     <- many get
     return DataSet{ .. }
 

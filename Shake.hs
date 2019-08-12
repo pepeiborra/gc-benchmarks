@@ -14,7 +14,7 @@ import           Analysis
 
 -- Could be dynamic
 sizes :: [Int]
-sizes = [25, 50, 100, 200, 400, 800, 1600]
+sizes = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200]
 
 main :: IO ()
 main = shakeArgs shakeOptions $ do

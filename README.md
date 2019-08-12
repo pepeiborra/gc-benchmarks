@@ -57,7 +57,7 @@ To measure the max gen 1 pause length, I rely on the output of `+RTS -s`. This i
 ## Results
 ### Pauses
 
-The graph below shows the max length of the Gen 1 pauses per dataset size, both with the standard (red) and incremental (dotted) GC for various sizes of N.
+The graph below shows the max length of the Gen 1 pauses per dataset size, both with the standard and incremental GC for various sizes of N.
 
 ![][pauses]
 
@@ -74,8 +74,10 @@ So the new collector is managing a 5-fold improvement on a worst case scenario. 
 
 ![][pauses.double]
 
-The pauses with the new collector are very short and clearly less-than-linear in the size of the surviving set, as promised.
-Very good!
+The incremental collector pauses are dwarfed by the copying collector ones.
+Focusing on the incremental line, the length of the pauses is no longer proportional to the size of the surviving set:
+
+![][pauses.double.incremental]
 
 ### Runtimes
 
@@ -125,6 +127,7 @@ Finally, two obligatory disclaimers. First, these benchmarks are only as accurat
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
 [pauses]: Pauses.PusherBS.Normal.svg
 [pauses.double]: Pauses.PusherDouble.Normal.svg
+[pauses.double.incremental]: Pauses.PusherDouble.Normal.Incremental.svg
 [runtimes]: Runtimes.PusherBS.Normal.svg
 [runtimes.double]: Runtimes.PusherDouble.Normal.svg
 [maxResidency]: MaxResidency.PusherBS.Normal.svg
