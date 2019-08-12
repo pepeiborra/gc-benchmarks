@@ -13,8 +13,11 @@ import           Text.Read
 import           Analysis
 
 -- Could be dynamic
-sizes :: [Int]
-sizes = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200]
+sizes :: Program -> [Int]
+sizes PusherShort = takeWhile (<= 1200) (sizes PusherBS)
+sizes other = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600]
+
+
 
 main :: IO ()
 main = shakeArgs shakeOptions $ do
@@ -37,9 +40,9 @@ main = shakeArgs shakeOptions $ do
   rule @DataSet $ \DataSet {..} out -> do
     values <- mapM
       (fmap (parserFor metric) . readFile' . (takeDirectory out </>) . show)
-      [ RunLog { .. } :: RunLog | size <- sizes ]
+      [ RunLog { .. } :: RunLog | size <- sizes program ]
     writeFile' out
-               (unlines $ zipWith (\a b -> unwords [show a, b]) sizes values)
+               (unlines $ zipWith (\a b -> unwords [show a, b]) (sizes program) values)
 
   rule @Trace $ \t out -> do
     plotTrace t out
@@ -47,13 +50,10 @@ main = shakeArgs shakeOptions $ do
   rule @Analysis $ \analysis out -> do
     plotAnalysis analysis out
 
-  "PusherBS" %> \out -> do
-    need ["Pusher.hs"]
-    cmd "ghc" ["-threaded", "-rtsopts", "-O2", "Pusher.hs", "-o", out]
-
-  "PusherDouble" %> \out -> do
-    need ["PusherDouble.hs"]
-    cmd "ghc" ["-threaded", "-rtsopts", "-O2", "PusherDouble.hs", "-o", out]
+  rule @Program $ \p out -> do
+    let hs = show p <.> "hs"
+    need [hs]
+    cmd "ghc" ["-threaded", "-rtsopts", "-O2", hs, "-o", out]
 
   "*.html" %> \out -> do
     let md = replaceExtension out "md"

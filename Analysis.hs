@@ -21,6 +21,7 @@ module Analysis
   , Analysis
   , GC(..)
   , Mode(..)
+  , Program(..)
   , enumerate
   , parserFor
   , plotTrace
@@ -58,7 +59,7 @@ data Mode = Normal | ExtraIterations
   deriving (GEq, GEnum) via Default Mode
 
 -- | Program to run
-data Program = PusherBS | PusherDouble
+data Program = PusherBS | PusherDouble | PusherShort
   deriving (Generic, Bounded, Read, Show)
   deriving (GEq, GEnum) via Default Program
 
