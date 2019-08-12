@@ -79,6 +79,10 @@ Focusing on the incremental line, the length of the pauses is no longer proporti
 
 ![][pauses.double.incremental]
 
+If instead we replace ByteString with Testosterone, the outcome is similar to Doubles up to 1200k messages, and runs out of memory after that. The incremental collector allows the heap to grow unbounded while it's performing the sweeping phase, as seen in the section Memory below.
+
+![][pauses.short]
+
 ### Runtimes
 
 In my benchmarks the incremental collector does not have any impact on the run time. If you think this is too good to be true, that makes two of us. The mark&sweep collector is able to perform the sweeping phase in parallel using a second core of the CPU, so this performance relies on having an extra CPU core available and will probably not hold if that's not the case.
@@ -90,7 +94,6 @@ The graph below shows the runtimes for each collector per dataset size:
 If we replace the bytestrings with doubles, the outcome is pretty much the same:
 
 ![][runtimes.double]
-
 
 ### Memory
 
@@ -110,7 +113,11 @@ Drilling into how the heap evolves over time for a concrete example, using the L
 
 ![][liveBytesComparisonDouble]
 
-For some reason this behaviour doesn't appear in the Bytestring example, and the incremental GC is able to collect the heap multiple times concurrently with the main program:
+With ShortByteString the picture is identical to the one with Doubles, but since the messages are much larger - 1000 bytes + SBS overhead - the process runs out of memory for N larger than 600k.
+
+![][liveBytesComparisonShort]
+
+Finally, the behaviour with ByteString is an exception again: the incremental GC is able to collect the heap multiple times concurrently with the main program, even more so than the copying GC.
 
 ![][liveBytesComparisonBS]
 
@@ -128,12 +135,14 @@ Finally, two obligatory disclaimers. First, these benchmarks are only as accurat
 [pauses]: Pauses.PusherBS.Normal.svg
 [pauses.double]: Pauses.PusherDouble.Normal.svg
 [pauses.double.incremental]: Pauses.PusherDouble.Normal.Incremental.svg
+[pauses.short]: Pauses.PusherShort.Normal.svg
 [runtimes]: Runtimes.PusherBS.Normal.svg
 [runtimes.double]: Runtimes.PusherDouble.Normal.svg
 [maxResidency]: MaxResidency.PusherBS.Normal.svg
 [maxResidency.double]: MaxResidency.PusherDouble.Normal.svg
 [maxResidencyPerIterations]: MaxResidency.PusherDouble.Incremental.svg
 [liveBytesComparisonDouble]: Live.1600.ExtraIterations.PusherDouble.svg
+[liveBytesComparisonShort]: Live.600.ExtraIterations.PusherShort.svg
 [liveBytesComparisonBS]: Live.1600.ExtraIterations.PusherBS.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [shake]: https://github.com/pepeiborra/gc-benchmarks/blob/master/Shake.hs

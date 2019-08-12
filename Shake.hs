@@ -15,7 +15,7 @@ import           Analysis
 -- Could be dynamic
 sizes :: Program -> [Int]
 sizes PusherShort = takeWhile (<= 1200) (sizes PusherBS)
-sizes other = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600]
+sizes _ = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600]
 
 
 
@@ -24,13 +24,16 @@ main = shakeArgs shakeOptions $ do
   phony "install" $ do
     Just out <- getEnv "out"
     liftIO $ createDirectoryIfMissing True out
+    readmeLines <- readFileLines "README.md"
+    let links =  map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
     mapM_ ((\x -> copyFile' x (out </> x)))
-      $  (show <$> enumerate @DataSet)
+      $  filter ((== "svg"). takeExtension) links
       ++ ["README.html"]
 
   rule @RunLog $ \RunLog {..} out -> do
     need [takeDirectory out </> show program]
     Stderr res <- cmd
+      (WithStderr False)
       ("./" <> show program)
       (  [show (size * 1000), argMode mode, "+RTS", "-S"]
       ++ [ "-xn" | Incremental <- [gc] ]
@@ -45,9 +48,11 @@ main = shakeArgs shakeOptions $ do
                (unlines $ zipWith (\a b -> unwords [show a, b]) (sizes program) values)
 
   rule @Trace $ \t out -> do
+    putNormal $ "Plotting trace: " <> show t
     plotTrace t out
 
   rule @Analysis $ \analysis out -> do
+    putNormal $ "Plotting analysis: " <> show analysis
     plotAnalysis analysis out
 
   rule @Program $ \p out -> do
