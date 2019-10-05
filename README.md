@@ -79,7 +79,7 @@ Focusing on the incremental line, the length of the pauses is no longer proporti
 
 ![][pauses.double.incremental]
 
-If instead we replace ByteString with Testosterone, the outcome is similar to Doubles up to 1200k messages, and runs out of memory after that. The incremental collector allows the heap to grow unbounded while it's performing the sweeping phase, as seen in the section Memory below.
+If instead we replace ByteString with ShortByteString, the outcome is similar to Doubles up to 1200k messages, and runs out of memory after that. The incremental collector allows the heap to grow unbounded while it's performing the sweeping phase, as seen in the section Memory below.
 
 ![][pauses.short]
 
