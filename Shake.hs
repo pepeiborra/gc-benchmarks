@@ -13,9 +13,9 @@ import           Text.Read
 import           Analysis
 
 -- Could be dynamic
-sizes :: Program -> [Int]
-sizes PusherShort = takeWhile (<= 1200) (sizes PusherBS)
-sizes _ = [25, 50, 100, 200, 400, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600]
+sizes :: MsgTypeSing -> [Int]
+sizes S = takeWhile (<= 1200) (sizes B)
+sizes _ = [25, 50, 100, 200, 400, 800, 1200, 1400, 1800]
 
 
 
@@ -31,11 +31,11 @@ main = shakeArgs shakeOptions $ do
       ++ ["README.html"]
 
   rule @RunLog $ \RunLog {..} out -> do
-    need [takeDirectory out </> show program]
+    need [takeDirectory out </> "Pusher"]
     Stderr res <- cmd
       (WithStderr False)
-      ("./" <> show program)
-      (  [show (size * 1000), argMode mode, "+RTS", "-S"]
+      "./Pusher"
+      (  [show (size * 1000), argMode mode, show msgType, "+RTS", "-S"]
       ++ [ "-xn" | Incremental <- [gc] ]
       )
     writeFile' out res
@@ -43,9 +43,9 @@ main = shakeArgs shakeOptions $ do
   rule @DataSet $ \DataSet {..} out -> do
     values <- mapM
       (fmap (parserFor metric) . readFile' . (takeDirectory out </>) . show)
-      [ RunLog { .. } :: RunLog | size <- sizes program ]
+      [ RunLog { .. } :: RunLog | size <- sizes msgType ]
     writeFile' out
-               (unlines $ zipWith (\a b -> unwords [show a, b]) (sizes program) values)
+               (unlines $ zipWith (\a b -> unwords [show a, b]) (sizes msgType) values)
 
   rule @Trace $ \t out -> do
     putNormal $ "Plotting trace: " <> show t
@@ -55,10 +55,9 @@ main = shakeArgs shakeOptions $ do
     putNormal $ "Plotting analysis: " <> show analysis
     plotAnalysis analysis out
 
-  rule @Program $ \p out -> do
-    let hs = show p <.> "hs"
-    need [hs]
-    cmd "ghc" ["-threaded", "-rtsopts", "-O2", hs, "-o", out]
+  "Pusher" %> \out -> do
+    need [out <.> "hs"]
+    cmd "ghc" ["-main-is", (takeFileName out), "-threaded", "-rtsopts", "-O2", out <.> "hs", "-o", out]
 
   "*.html" %> \out -> do
     let md = replaceExtension out "md"
@@ -70,6 +69,9 @@ main = shakeArgs shakeOptions $ do
         ++ (show <$> analyses)
     Stdout html <- cmd "pandoc" [md]
     liftIO $ BS.writeFile out html
+
+  phony "clean" $ do
+    cmd "rm" "*.hi *.o *.dataset *.log"
 
 -- | A helper for defining rules over 'Read'able typed file paths
 rule :: forall a . Read a => (a -> String -> Action ()) -> Rules ()

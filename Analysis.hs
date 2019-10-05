@@ -21,7 +21,7 @@ module Analysis
   , Analysis
   , GC(..)
   , Mode(..)
-  , Program(..)
+  , MsgTypeSing(..)
   , enumerate
   , parserFor
   , plotTrace
@@ -39,6 +39,7 @@ import Generics.Deriving
 import qualified Graphics.Rendering.Chart.Easy as E
 import Graphics.Rendering.Chart.Easy ((.=))
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as E
+import Pusher (MsgTypeSing(..))
 import System.FilePath
 import Text.Read
 import qualified Text.ParserCombinators.ReadP as P
@@ -58,11 +59,6 @@ data Mode = Normal | ExtraIterations
   deriving (Generic, Bounded, Read, Show)
   deriving (GEq, GEnum) via Default Mode
 
--- | Program to run
-data Program = PusherBS | PusherDouble | PusherShort
-  deriving (Generic, Bounded, Read, Show)
-  deriving (GEq, GEnum) via Default Program
-
 -- | Garbage collector to use
 data GC = Copying | Incremental
   deriving (Generic, Bounded, Read, Show)
@@ -72,21 +68,21 @@ data GC = Copying | Incremental
 data RunLog_ f = RunLog
   { gc   :: HKD f GC
   , mode :: HKD f Mode
-  , program :: HKD f Program
+  , msgType :: HKD f MsgTypeSing
   , size :: HKD f Int
   }
 
 type RunLog = RunLog_ Identity
 
-instance Show RunLog where show RunLog{..} = show size <.> show mode <.> show program <.> show gc <.> "log"
+instance Show RunLog where show RunLog{..} = show size <.> show mode <.> show msgType <.> show gc <.> "log"
 instance Read RunLog where
   readPrec = do
-    size <- readPrec <* dot
-    mode <- readPrec <* dot
-    program <- readPrec <* dot
-    gc <- readPrec <* dot
-    "log" <- many get
-    return RunLog{..}
+    size    <- readPrec <* dot
+    mode    <- readPrec <* dot
+    msgType <- readPrec <* dot
+    gc      <- readPrec <* dot
+    "log"   <- many get
+    return RunLog { .. }
 
 data TraceMetric = Allocated | Copied | Live | User | Elapsed
   deriving (Generic, Read, Show)
@@ -100,14 +96,14 @@ data Trace = Trace
 
 instance Show Trace where
   show Trace{traceMetric, runLog = RunLog{..}} =
-    show traceMetric <.> show size <.> show mode <.> show program <.> show gc <.> "svg"
+    show traceMetric <.> show size <.> show mode <.> show msgType <.> show gc <.> "svg"
 
 instance Read Trace where
   readPrec = do
     traceMetric <- readPrec <* dot
     size    <- (given <$> readPrec <* dot) <|> pure OverAll
     mode    <- (given <$> readPrec <* dot) <|> pure OverAll
-    program <- (given <$> readPrec <* dot) <|> pure OverAll
+    msgType <- (given <$> readPrec <* dot) <|> pure OverAll
     gc      <- (given <$> readPrec <* dot) <|> pure OverAll
     "svg"     <- many get
     let runLog = RunLog{..}
@@ -119,7 +115,7 @@ toRunLogs Trace { runLog = RunLog {..} } =
   | gc      <- over gc
   , mode    <- over mode
   , size    <- over size
-  , program <- over program
+  , msgType <- over msgType
   ]
 
 -- | A line in the output of -S
@@ -159,7 +155,7 @@ data DataSet_ f = DataSet
   { metric  :: HKD f Metric
   , gc      :: HKD f GC
   , mode    :: HKD f Mode
-  , program :: HKD f Program
+  , msgType :: HKD f MsgTypeSing
   }
   deriving (Generic)
 
@@ -167,6 +163,8 @@ deriving via Default DataSet  instance GEq DataSet
 deriving via Default DataSet  instance GEnum DataSet
 deriving via Default Analysis instance GEq Analysis
 deriving via Default Analysis instance GEnum Analysis
+deriving via Default MsgTypeSing instance GEq MsgTypeSing
+deriving via Default MsgTypeSing instance GEnum MsgTypeSing
 
 type DataSet = DataSet_ Identity
 type Analysis = DataSet_ Over
@@ -176,11 +174,11 @@ load dataset = do
   ll <- lines <$> readFile' (show dataset)
   return [ (read a, read b) | [a,b] <- map words ll ]
 
-instance Show DataSet where show DataSet{..} = show metric <.> show program <.> show mode <.> show gc <.> "dataset"
+instance Show DataSet where show DataSet{..} = show metric <.> show msgType <.> show mode <.> show gc <.> "dataset"
 instance Read DataSet where
   readPrec = do
     metric <- readPrec <* dot
-    program <- readPrec <* dot
+    msgType <- readPrec <* dot
     mode <- readPrec <* dot
     gc <- readPrec <* dot
     "dataset"<- many get
@@ -192,23 +190,23 @@ toDataSets DataSet{..} =
   | gc <- over gc
   , mode <- over mode
   , metric <- over metric
-  , program <- over program
+  , msgType <- over msgType
   ]
 
 instance Show Analysis where
-  show DataSet{..} = show metric <.> show program <.> show mode <.> show gc <.> "svg"
+  show DataSet{..} = show metric <.> show msgType <.> show mode <.> show gc <.> "svg"
 
 instance Read Analysis where
   readPrec = do
     metric  <- (given <$> readPrec <* dot) <|> pure OverAll
-    program <- (given <$> readPrec <* dot) <|> pure OverAll
+    msgType <- (given <$> readPrec <* dot) <|> pure OverAll
     mode    <- (given <$> readPrec <* dot) <|> pure OverAll
     gc      <- (given <$> readPrec <* dot) <|> pure OverAll
     "svg"     <- many get
     return DataSet{ .. }
 
 -- -----------------------------------------------------------------------------------------------------------
--- Type Classes
+-- Figure titles
 
 class HasTitle a where title :: a -> String
 instance HasTitle Metric where
@@ -217,14 +215,24 @@ instance HasTitle Metric where
   title MaxResidency = "Max Residency (bytes)"
 
 instance HasTitle DataSet where
-  title DataSet{..}= show metric <> "-" <> show program <> "-" <> show mode <> "-" <> show gc
+  title DataSet{..}= show metric <> "-" <> title msgType <> "-" <> show mode <> "-" <> show gc
 
 instance HasTitle Analysis where
-  title DataSet{..}   = intercalate " - " $ filter (not.null) [show metric, show program, show gc, show mode]
+  title DataSet{..}   = intercalate " - " $ filter (not.null) [show metric, title msgType, show gc, show mode]
 
 instance HasTitle Trace where
   title Trace { runLog = RunLog {..}, ..} = intercalate " - "
-    $ filter (not . null) [show traceMetric, show program, show size, show gc, show mode]
+    $ filter (not . null) [show traceMetric, title msgType, show size, show gc, show mode]
+
+instance HasTitle MsgTypeSing where
+  title B = "ByteStrings"
+  title D = "Doubles"
+  title S = "ShortByteStrings"
+
+instance HasTitle a => HasTitle (Over a) where
+  title OverAll = ""
+  title (Over xx) = intercalate "&&" $ map title xx
+
 -- ------------------------------------------------------------------------------------------------------------
 -- Functions
 
@@ -265,7 +273,7 @@ labelDataSetInAnalysis :: Analysis -> DataSet -> String
 labelDataSetInAnalysis an DataSet{..} = intercalate " - " $
   filter (not.null) $
   [ show metric | OverAll <- [case an of DataSet{..} -> metric]] ++
-  [ show program | OverAll <- [case an of DataSet{..} -> program]] ++
+  [ show msgType | OverAll <- [case an of DataSet{..} -> msgType]] ++
   [ show gc | OverAll <- [case an of DataSet{..} -> gc]] ++
   [ show mode | OverAll <- case an of DataSet{..} -> [mode]]
 
@@ -287,7 +295,7 @@ labelRunLogInTrace :: Trace -> RunLog -> String
 labelRunLogInTrace trace RunLog{..} = intercalate " - " $
   filter (not.null) $
   [ show size | OverAll <- [case runLog trace of RunLog{..} -> size]] ++
-  [ show program | OverAll <- [case runLog trace of RunLog{..} -> program]] ++
+  [ show msgType | OverAll <- [case runLog trace of RunLog{..} -> msgType]] ++
   [ show gc | OverAll <- [case runLog trace of RunLog{..} -> gc]] ++
   [ show mode | OverAll <- case runLog trace of RunLog{..} -> [mode]]
 
