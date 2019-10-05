@@ -109,21 +109,37 @@ It's a bit surprising that the behaviour is so different between the two example
 
 ![][maxResidencyPerIterations]
 
-Drilling into how the heap evolves over time for a concrete example, using the Live bytes column of the `+RTS -S ~RTS` output, we can see that the incremental collector is "lagging behind" the main program, allowing the heap to grow very large before completing the garbage collection.
+Drilling into how the heap evolves over time for a concrete example, using the Live bytes column of the `+RTS -S ~RTS` output, we can see that the incremental collector is "lagging behind" the main program, allowing the heap to grow very large before completing the garbage collection. The chart below shows the heap size over time for the Copying collector and for the incremental collector:
 
 ![][liveBytesComparisonDouble]
+
+Can we help the incremental collector by running with multiple capabilities via `+RTS -N -RTS`. The chart below shows that increasing the value `of +RTS -N` does seem to help, but not enough to prevent the heap from eventually running out of control:
+
+![][liveBytesComparisonDoubleCapabilities]
 
 With ShortByteString the picture is identical to the one with Doubles, but since the messages are much larger - 1000 bytes + SBS overhead - the process runs out of memory for N larger than 600k.
 
 ![][liveBytesComparisonShort]
 
-Finally, the behaviour with ByteString is an exception again: the incremental GC is able to collect the heap multiple times concurrently with the main program, even more so than the copying GC.
+Finally, the behaviour with ByteString is an exception once more: the incremental GC is able to collect the heap multiple times concurrently with the main program, even more so than the copying GC.
 
 ![][liveBytesComparisonBS]
 
+### Inserting artificial pauses
+
+To investigate the theory that the collector is "lagging behind" the main program, we insert artificial pauses of M milliseconds every I iterations. This is done using `Control.Concurrent.threadDelay`. To see if having extra threads would help the incremental collector, we benchmark with multiple values of `+RTS -N`.
+
+The chart below shows various combinations of *IncrementalWithPauses-C-M-I*, where C stands for capabilities, M is the pause length in milliseconds, and I is the interval between pauses. It seems that no matter how long or frequent the pauses, the heap still doesn't get collected in a reasonable time, causing it to eventually grow out of control.
+
+![][liveBytesWithPausesAll2]
+
+Same plot removing the Copying collector trace.
+
+![][liveBytesWithPausesAll]
+
 ## Conclusion
 
-The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag. This holds the potential to make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. But the collector is still [under review][5] for merging to GHC HEAD, and there are some issues with memory usage.
+The incremental garbage collector offers shorter pauses than the copying collector without the need to change any code, and little to no performance costs assuming an extra core available. Compact regions afford more control to decide when and for how long to pause, and even to perform the compaction concurrently with the main program, therefore achieving pauses as short as desired with the same performance characteristics. But this is at the cost of significant complexity, whereas the incremental collector can be turned on with a simple flag. This holds the potential to make GHC a better fit for many applications that require shorter GC pauses, such as games, event sourcing engines, and high-frequency trading systems. But the collector is still [under review][5] for merging to GHC HEAD, and there are some issues with memory usage that remain unexplained.
 
 Finally, two obligatory disclaimers. First, these benchmarks are only as accurate as the output of `+RTS -S -RTS`; it's entirely possible that it does not give a full picture in the case of the new collector, as it is still in development. Secondly, I must mention that the work carried out by Well-Typed has been sponsored by my employer, Standard Chartered, but all the views expressed in this blog post are my own and not that of my employer. 
 
@@ -132,18 +148,21 @@ Finally, two obligatory disclaimers. First, these benchmarks are only as accurat
 [3]: https://stackoverflow.com/questions/36772017/reducing-garbage-collection-pause-time-in-a-haskell-program
 [4]: http://hackage.haskell.org/package/compact-0.1.0.1
 [5]: https://gitlab.haskell.org/ghc/ghc/merge_requests/972
-[pauses]: Pauses.B.Normal.svg
-[pauses.double]: Pauses.D.Normal.svg
+[pauses]: Pauses.B.Normal.Copying+Incremental.svg
+[pauses.double]: Pauses.D.Normal.Copying+Incremental.svg
 [pauses.double.incremental]: Pauses.D.Normal.Incremental.svg
-[pauses.short]: Pauses.S.Normal.svg
-[runtimes]: Runtimes.B.Normal.svg
-[runtimes.double]: Runtimes.D.Normal.svg
-[maxResidency]: MaxResidency.B.Normal.svg
-[maxResidency.double]: MaxResidency.D.Normal.svg
+[pauses.short]: Pauses.S.Normal.Copying+Incremental.svg
+[runtimes]: Runtimes.B.Normal.Copying+Incremental.svg
+[runtimes.double]: Runtimes.D.Normal.Copying+Incremental.svg
+[maxResidency]: MaxResidency.B.Normal.Copying+Incremental.svg
+[maxResidency.double]: MaxResidency.D.Normal.Copying+Incremental.svg
 [maxResidencyPerIterations]: MaxResidency.D.Incremental.svg
-[liveBytesComparisonDouble]: Live.1600.ExtraIterations.D.svg
-[liveBytesComparisonShort]: Live.600.ExtraIterations.S.svg
-[liveBytesComparisonBS]: Live.1600.ExtraIterations.B.svg
+[liveBytesComparisonDouble]: Live.1600.ExtraIterations.D.Copying+Incremental.svg
+[liveBytesComparisonDoubleCapabilities]: Live.1600.ExtraIterations.D.Incremental-1+Incremental-2+Incremental-4.svg
+[liveBytesComparisonShort]: Live.600.ExtraIterations.S.Copying+Incremental-1+Incremental-2+Incremental-4.svg
+[liveBytesComparisonBS]: Live.1600.ExtraIterations.B.Copying+Incremental-1+Incremental-2+Incremental-4.svg
+[liveBytesWithPausesAll]: Live.600.ExtraIterations.S.IncrementalWithPauses.svg
+[liveBytesWithPausesAll2]: Live.600.ExtraIterations.S.Copying+IncrementalWithPauses.svg
 [nix]: https://github.com/pepeiborra/gc-benchmarks/blob/master/default.nix
 [shake]: https://github.com/pepeiborra/gc-benchmarks/blob/master/Shake.hs
 [nofib]: https://gitlab.haskell.org/ghc/ghc/wikis/building/running-no-fib

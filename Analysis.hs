@@ -1,4 +1,6 @@
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
@@ -6,8 +8,10 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -19,7 +23,7 @@ module Analysis
   , DataSet, DataSet_ (..)
   , Trace
   , Analysis
-  , GC(..)
+  , GC, GC_(..)
   , Mode(..)
   , MsgTypeSing(..)
   , enumerate
@@ -30,7 +34,7 @@ module Analysis
 
 import Control.Applicative
 import Control.Monad
-import Development.Shake hiding (Normal)
+import Development.Shake hiding (Normal, (*>))
 import Data.Char
 import Data.Functor.Identity
 import Data.List
@@ -39,6 +43,7 @@ import Generics.Deriving
 import qualified Graphics.Rendering.Chart.Easy as E
 import Graphics.Rendering.Chart.Easy ((.=))
 import qualified Graphics.Rendering.Chart.Backend.Diagrams as E
+import Numeric.Natural
 import Pusher (MsgTypeSing(..))
 import System.FilePath
 import Text.Read
@@ -59,14 +64,91 @@ data Mode = Normal | ExtraIterations
   deriving (Generic, Bounded, Read, Show)
   deriving (GEq, GEnum) via Default Mode
 
+newtype Capabilities = Capabilities Natural
+  deriving Generic
+  deriving newtype (Eq, Num, Read, Show)
+  deriving anyclass GEq
+
+instance GEnum Capabilities where genum = [1,2,4]
+
+newtype PauseMs = PauseMs Natural
+  deriving Generic
+  deriving newtype (Eq, Num, Read, Show)
+  deriving anyclass GEq
+
+instance GEnum PauseMs where genum = [1,10]
+
+newtype IterBetweenPauses = IterBetweenPauses Natural
+  deriving Generic
+  deriving newtype (Eq, Num, Read, Show)
+  deriving anyclass GEq
+
+instance GEnum IterBetweenPauses where genum = [100,10000]
+
 -- | Garbage collector to use
-data GC = Copying | Incremental
-  deriving (Generic, Bounded, Read, Show)
-  deriving (GEq, GEnum) via Default GC
+data GC_ f
+  = Copying
+  | Incremental (HKD f Capabilities)
+  | IncrementalWithPauses (HKD f Capabilities) (HKD f PauseMs) (HKD f IterBetweenPauses)
+  deriving (Generic)
+
+type GC = GC_ Identity
+type GCs = GC_ Over
+
+deriving anyclass instance GEq GC
+deriving anyclass instance GEnum GC
+deriving anyclass instance GEq GCs
+deriving anyclass instance GEnum GCs
+
+flattenGCs :: GCs -> [GC]
+flattenGCs Copying = pure Copying
+flattenGCs (Incremental cap) = Incremental <$> over cap
+flattenGCs (IncrementalWithPauses cap len iter) =
+  IncrementalWithPauses <$> over cap <*> over len <*> over iter
+
+instance Show GC where
+  show Copying = "Copying"
+  show (Incremental 1) = "Incremental"
+  show (Incremental n) = "Incremental-" <> show n
+  show (IncrementalWithPauses c ms n) = "IncrementalWithPauses-" <> show c <> "-" <> show ms <> "-" <> show n
+
+instance Show (GCs) where
+  show Copying = "Copying"
+  show (Incremental (Over [1])) = "Incremental"
+  show (Incremental n) = "Incremental-" <> show n
+  show (IncrementalWithPauses c ms n) = "IncrementalWithPauses-" <> show c <> "-" <> show ms <> "-" <> show n
+
+instance Read GC where
+  readPrec = choice
+    [ Copying <$ string "Copying"
+    , Incremental 1 <$ string "Incremental"
+    , Incremental <$> (string "Incremental-" *> readPrec)
+    , do
+        string "IncrementalWithPauses-"
+        c <- readPrec
+        char '-'
+        ms <- readPrec
+        char '-'
+        n <- readPrec
+        return (IncrementalWithPauses c ms n)
+    ]
+
+instance Read GCs where
+  readPrec = choice
+    [ Copying <$ string "Copying"
+    , Incremental (Over [1]) <$ string "Incremental"
+    , Incremental <$> (string "Incremental-" *> readPrec)
+    , do -- TODO review
+        string "IncrementalWithPauses"
+        c  <- (char '-' *> readPrec) <|> pure OverAll
+        ms <- (char '-' *> readPrec) <|> pure OverAll
+        n  <- (char '-' *> readPrec) <|> pure OverAll
+        return (IncrementalWithPauses c ms n)
+    ]
 
 -- | A file path containing the output of -S for a given run
 data RunLog_ f = RunLog
-  { gc   :: HKD f GC
+  { gc   :: HKD f (GC_ f)
   , mode :: HKD f Mode
   , msgType :: HKD f MsgTypeSing
   , size :: HKD f Int
@@ -101,10 +183,10 @@ instance Show Trace where
 instance Read Trace where
   readPrec = do
     traceMetric <- readPrec <* dot
-    size    <- (given <$> readPrec <* dot) <|> pure OverAll
-    mode    <- (given <$> readPrec <* dot) <|> pure OverAll
-    msgType <- (given <$> readPrec <* dot) <|> pure OverAll
-    gc      <- (given <$> readPrec <* dot) <|> pure OverAll
+    size    <- (readPrec <* dot) <|> pure OverAll
+    mode    <- (readPrec <* dot) <|> pure OverAll
+    msgType <- (readPrec <* dot) <|> pure OverAll
+    gc      <- (readPrec <* dot) <|> pure OverAll
     "svg"     <- many get
     let runLog = RunLog{..}
     return Trace{..}
@@ -112,7 +194,8 @@ instance Read Trace where
 toRunLogs :: Trace -> [RunLog]
 toRunLogs Trace { runLog = RunLog {..} } =
   [ RunLog { .. }
-  | gc      <- over gc
+  | gcs     <- over gc
+  , gc      <- flattenGCs gcs
   , mode    <- over mode
   , size    <- over size
   , msgType <- over msgType
@@ -153,7 +236,7 @@ loadRunLog rl = do
 -- | A set of metrics collected from multiple runs over varying data sizes
 data DataSet_ f = DataSet
   { metric  :: HKD f Metric
-  , gc      :: HKD f GC
+  , gc      :: HKD f (GC_ f)
   , mode    :: HKD f Mode
   , msgType :: HKD f MsgTypeSing
   }
@@ -177,17 +260,17 @@ load dataset = do
 instance Show DataSet where show DataSet{..} = show metric <.> show msgType <.> show mode <.> show gc <.> "dataset"
 instance Read DataSet where
   readPrec = do
-    metric <- readPrec <* dot
-    msgType <- readPrec <* dot
-    mode <- readPrec <* dot
-    gc <- readPrec <* dot
-    "dataset"<- many get
-    return DataSet{..}
+    metric    <- readPrec <* dot
+    msgType   <- readPrec <* dot
+    mode      <- readPrec <* dot
+    gc        <- readPrec <* dot
+    "dataset" <- many get
+    return DataSet { .. }
 
 toDataSets :: Analysis -> [DataSet]
 toDataSets DataSet{..} =
   [DataSet{..}
-  | gc <- over gc
+  | gc <- over gc >>= flattenGCs
   , mode <- over mode
   , metric <- over metric
   , msgType <- over msgType
@@ -198,11 +281,11 @@ instance Show Analysis where
 
 instance Read Analysis where
   readPrec = do
-    metric  <- (given <$> readPrec <* dot) <|> pure OverAll
-    msgType <- (given <$> readPrec <* dot) <|> pure OverAll
-    mode    <- (given <$> readPrec <* dot) <|> pure OverAll
-    gc      <- (given <$> readPrec <* dot) <|> pure OverAll
-    "svg"     <- many get
+    metric  <- (readPrec <* dot) <|> pure OverAll
+    msgType <- (readPrec <* dot) <|> pure OverAll
+    mode    <- (readPrec <* dot) <|> pure OverAll
+    gc      <- (readPrec <* dot) <|> pure OverAll
+    "svg"   <- many get
     return DataSet{ .. }
 
 -- -----------------------------------------------------------------------------------------------------------
@@ -257,9 +340,6 @@ parseMaxResidency input =
 enumerate :: forall a . (GEnum a) => [a]
 enumerate = genum
 
-dot :: ReadPrec ()
-dot = get >>= guard . (== '.')
-
 plotAnalysis :: Analysis -> FilePath -> Action ()
 plotAnalysis analysis out = do
   let datasets = toDataSets analysis
@@ -272,10 +352,10 @@ plotAnalysis analysis out = do
 labelDataSetInAnalysis :: Analysis -> DataSet -> String
 labelDataSetInAnalysis an DataSet{..} = intercalate " - " $
   filter (not.null) $
-  [ show metric | OverAll <- [case an of DataSet{..} -> metric]] ++
-  [ show msgType | OverAll <- [case an of DataSet{..} -> msgType]] ++
-  [ show gc | OverAll <- [case an of DataSet{..} -> gc]] ++
-  [ show mode | OverAll <- case an of DataSet{..} -> [mode]]
+  [ show metric | case an of DataSet{..} -> multi (over metric)] ++
+  [ show msgType | case an of DataSet{..} -> multi (over msgType)] ++
+  [ show gc | case an of DataSet{..} -> multi (over gc >>= flattenGCs)] ++
+  [ show mode | case an of DataSet{..} -> multi (over mode)]
 
 plotTrace :: Trace -> FilePath -> Action ()
 plotTrace t@Trace { traceMetric } out = do
@@ -294,10 +374,10 @@ plotTrace t@Trace { traceMetric } out = do
 labelRunLogInTrace :: Trace -> RunLog -> String
 labelRunLogInTrace trace RunLog{..} = intercalate " - " $
   filter (not.null) $
-  [ show size | OverAll <- [case runLog trace of RunLog{..} -> size]] ++
-  [ show msgType | OverAll <- [case runLog trace of RunLog{..} -> msgType]] ++
-  [ show gc | OverAll <- [case runLog trace of RunLog{..} -> gc]] ++
-  [ show mode | OverAll <- case runLog trace of RunLog{..} -> [mode]]
+  [ show size | case runLog trace of RunLog{..} -> multi (over size)] ++
+  [ show msgType | case runLog trace of RunLog{..} -> multi (over msgType)] ++
+  [ show gc | case runLog trace of RunLog{..} -> multi (over gc >>= flattenGCs)] ++
+  [ show mode | case runLog trace of RunLog{..} -> multi (over mode)]
 
 frameMetric :: TraceMetric -> Frame -> Double
 frameMetric Allocated = fromIntegral . allocated
@@ -309,21 +389,46 @@ frameMetric User = user
 ----------------------------------------------------
 -- Dual purpose types for data and analysis
 
-type family HKD (f :: * -> *) a
-type instance HKD Identity a = a
-type instance HKD Over a = Over a
+type family HKD (f :: * -> *) a where
+  HKD Identity a = a
+  HKD f a = f a
 
 data Over a = Over [a] | OverAll
-  deriving (Generic)
+  deriving (Functor, Foldable, Generic, Traversable)
   deriving (GEq, GEnum) via Default (Over a)
 
-instance Show a => Show (Over a) where
-  show OverAll = ""
-  show (Over xx) = intercalate "&&" $ map show xx
+instance Applicative Over where
+  pure x = Over [x]
+  OverAll <*> _ = OverAll
+  _ <*> OverAll = OverAll
+  Over ff <*> Over xx = Over (ff <*> xx)
 
-given :: a -> Over a
-given x = Over [x]
+instance Read a => Read (Over a) where
+  readPrec = readP_to_Prec (\prec -> Over  <$> P.sepBy1 (readPrec_to_P readPrec prec) (P.char '+'))
+
+instance Show a => Show (Over a) where
+  show (Over xx) = intercalate "+" (map show xx)
+  show OverAll = ""
 
 over :: GEnum a => Over a -> [a]
 over (Over xx) = xx
 over OverAll   = enumerate
+
+---------------------------------------------------------
+-- Parsing helpers
+
+char :: Char -> ReadPrec ()
+char c = get >>= \c' -> guard (c == c') >> pure ()
+
+string :: String -> ReadPrec ()
+string = mapM_ char
+
+dot :: ReadPrec ()
+dot = char '.'
+
+---------------------------------------------------------
+-- Utils
+
+multi :: [a] -> Bool
+multi (_ : _ : _) = True
+multi _ = False

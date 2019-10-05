@@ -17,7 +17,15 @@ sizes :: MsgTypeSing -> [Int]
 sizes S = takeWhile (<= 1200) (sizes B)
 sizes _ = [25, 50, 100, 200, 400, 800, 1200, 1400, 1800]
 
+-- Looks for a paragraph of markdown references at the end of a list of lines
+extractLinksFromLines :: [String] -> [String]
+extractLinksFromLines =
+    map (drop 2 . dropWhile (/= ':'))
+    . takeWhile (not . null)
+    . reverse
 
+is :: forall a . Read a => String -> Bool
+is = isJust . readMaybe @a
 
 main :: IO ()
 main = shakeArgs shakeOptions $ do
@@ -25,18 +33,20 @@ main = shakeArgs shakeOptions $ do
     Just out <- getEnv "out"
     liftIO $ createDirectoryIfMissing True out
     readmeLines <- readFileLines "README.md"
-    let links =  map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
+    let links = filter (\x -> is @Trace x || is @Analysis x) $ extractLinksFromLines readmeLines
     mapM_ ((\x -> copyFile' x (out </> x)))
-      $  filter ((== ".svg"). takeExtension) links
-      ++ ["README.html"]
+      $ links ++ ["README.html"]
 
   rule @RunLog $ \RunLog {..} out -> do
     need [takeDirectory out </> "Pusher"]
     Stderr res <- cmd
       (WithStderr False)
       "./Pusher"
-      (  [show (size * 1000), argMode mode, show msgType, "+RTS", "-S"]
-      ++ [ "-xn" | Incremental <- [gc] ]
+      (  [show (size * 1000), argMode mode, show msgType]
+      ++ concat [ [show ms, show n] | IncrementalWithPauses _ ms n <- [gc]]
+      ++ ["+RTS", "-S"]
+      ++ concat [ ["-xn", "-N" <> show c] | Incremental c <- [gc] ]
+      ++ concat [ ["-xn", "-N" <> show c] | IncrementalWithPauses c _ _ <- [gc] ]
       )
     writeFile' out res
 
@@ -62,11 +72,8 @@ main = shakeArgs shakeOptions $ do
   "*.html" %> \out -> do
     let md = replaceExtension out "md"
     readmeLines <- readFileLines md
-    let links = map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
-        traces = mapMaybe (readMaybe @Trace) links
-        analyses = mapMaybe (readMaybe @Analysis) links
-    need $ (show <$> traces)
-        ++ (show <$> analyses)
+    let links = filter (\x -> is @Trace x || is @Analysis x) $ extractLinksFromLines readmeLines
+    need links
     Stdout html <- cmd "pandoc" [md]
     liftIO $ BS.writeFile out html
 
