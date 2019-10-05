@@ -27,7 +27,7 @@ main = shakeArgs shakeOptions $ do
     readmeLines <- readFileLines "README.md"
     let links =  map (drop 2 . dropWhile (/= ':'))$ takeWhile (not.null) $ reverse $ readmeLines
     mapM_ ((\x -> copyFile' x (out </> x)))
-      $  filter ((== "svg"). takeExtension) links
+      $  filter ((== ".svg"). takeExtension) links
       ++ ["README.html"]
 
   rule @RunLog $ \RunLog {..} out -> do
