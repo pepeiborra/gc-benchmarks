@@ -19,7 +19,7 @@ in stdenv.mkDerivation {
   # outputs = [ "plot.svg" ];
   src = ./.;
   buildPhase = "${shakeBuilder}/bin/Shake -j1 -V";
-  installPhase = "${shakeBuilder}/bin/Shake install";
+  installPhase = "${shakeBuilder}/bin/Shake install -j1";
   buildInputs = [
     haskell.compiler.ghc881NonMoving
     plotutils
