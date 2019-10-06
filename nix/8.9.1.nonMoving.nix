@@ -2,13 +2,10 @@
 
 # build-tools
 , bootPkgs
-, autoconf, automake, coreutils, fetchurl, perl, python3, m4, sphinx
+, autoconf, automake, coreutils, fetchgit, fetchpatch, perl, python3, m4, sphinx
 , bash
 
 , libiconv ? null, ncurses
-
-, # GHC can be built with system libffi or a bundled one.
-  libffi ? null
 
 , useLLVM ? !stdenv.targetPlatform.isx86
 , # LLVM is conceptually a run-time-only depedendency, but for
@@ -30,6 +27,7 @@
 , # Whetherto build terminfo.
   enableTerminfo ? !stdenv.targetPlatform.isWindows
 
+, version ? "8.9.20191005"
 , # What flavour to build. An empty string indicates no
   # specific flavour and falls back to ghc default values.
   ghcFlavour ? stdenv.lib.optionalString (stdenv.targetPlatform != stdenv.hostPlatform)
@@ -74,7 +72,6 @@ let
 
   # Splicer will pull out correct variations
   libDeps = platform: stdenv.lib.optional enableTerminfo [ ncurses ]
-    ++ [libffi]
     ++ stdenv.lib.optional (!enableIntegerSimple) gmp
     ++ stdenv.lib.optional (platform.libc != "glibc" && !targetPlatform.isWindows) libiconv;
 
@@ -86,18 +83,29 @@ let
 
 in
 stdenv.mkDerivation (rec {
-  version = "8.8.0.20190613";
+  inherit version;
+  inherit (src) rev;
   name = "${targetPrefix}ghc-${version}";
 
-  src = ./ghc-8.8.0.20190730-src.tar.xz;
-
   enableParallelBuilding = true;
+
+  src = fetchgit {
+    url = "https://gitlab.haskell.org/ghc/ghc.git/";
+    rev = "2d8d4cce157aa4a9d1c7b24e4dfde4fe470e5178";
+    sha256 = "06mgcw5jz59jvprahfcaxnnrjl4ipk8lkwwij3w8pz5jsxfx62ql";
+    fetchSubmodules = true;
+  };
 
   outputs = [ "out" "doc" ];
 
   patches = [
-    ./0001-Stats-Add-sync-pauses-to-RTS-S-output.patch
-    ./0001-Unconditionally-flush-update-remembered-set-during-m.patch
+    (fetchpatch { # https://github.com/haskell/haddock/issues/900
+     url = "https://patch-diff.githubusercontent.com/raw/haskell/haddock/pull/983.diff";
+     name = "loadpluginsinmodules.diff";
+     sha256 = "0bvvv0zsfq2581zsir97zfkggc1kkircbbajc2fz3b169ycpbha1";
+     extraPrefix = "utils/haddock/";
+     stripLen = 1;
+   })
   ];
 
   postPatch = "patchShebangs .";
@@ -112,7 +120,8 @@ stdenv.mkDerivation (rec {
     export CC="${targetCC}/bin/${targetCC.targetPrefix}cc"
     export CXX="${targetCC}/bin/${targetCC.targetPrefix}cxx"
     # Use gold to work around https://sourceware.org/bugzilla/show_bug.cgi?id=16177
-    export LD="${targetCC.bintools}/bin/${targetCC.bintools.targetPrefix}ld${stdenv.lib.optionalString targetPlatform.isAarch32 ".gold"}"
+    # and more generally have a faster linker.
+    export LD="${targetCC.bintools}/bin/${targetCC.bintools.targetPrefix}ld${stdenv.lib.optionalString targetPlatform.isLinux ".gold"}"
     export AS="${targetCC.bintools.bintools}/bin/${targetCC.bintools.targetPrefix}as"
     export AR="${targetCC.bintools.bintools}/bin/${targetCC.bintools.targetPrefix}ar"
     export NM="${targetCC.bintools.bintools}/bin/${targetCC.bintools.targetPrefix}nm"
@@ -121,6 +130,9 @@ stdenv.mkDerivation (rec {
     export STRIP="${targetCC.bintools.bintools}/bin/${targetCC.bintools.targetPrefix}strip"
 
     echo -n "${buildMK}" > mk/build.mk
+    echo ${version} >VERSION
+    echo ${src.rev} >GIT_COMMIT_ID
+    ./boot
     sed -i -e 's|-isysroot /Developer/SDKs/MacOSX10.5.sdk||' configure
   '' + stdenv.lib.optionalString (!stdenv.isDarwin) ''
     export NIX_LDFLAGS+=" -rpath $out/lib/ghc-${version}"
@@ -153,7 +165,6 @@ stdenv.mkDerivation (rec {
   configureFlags = [
     "--datadir=$doc/share/doc/ghc"
     "--with-curses-includes=${ncurses.dev}/include" "--with-curses-libraries=${ncurses.out}/lib"
-  ] ++ stdenv.lib.optionals (libffi != null) ["--with-system-libffi" "--with-ffi-includes=${targetPackages.libffi.dev}/include" "--with-ffi-libraries=${targetPackages.libffi.out}/lib"
   ] ++ stdenv.lib.optional (targetPlatform == hostPlatform && !enableIntegerSimple) [
     "--with-gmp-includes=${targetPackages.gmp.dev}/include" "--with-gmp-libraries=${targetPackages.gmp.out}/lib"
   ] ++ stdenv.lib.optional (targetPlatform == hostPlatform && hostPlatform.libc != "glibc" && !targetPlatform.isWindows) [
@@ -170,9 +181,6 @@ stdenv.mkDerivation (rec {
 
   # Make sure we never relax`$PATH` and hooks support for compatability.
   strictDeps = true;
-
-  # Don’t add -liconv to LDFLAGS automatically so that GHC will add it itself.
-	dontAddExtraLibs = true;
 
   nativeBuildInputs = [
     perl autoconf automake m4 python3 sphinx

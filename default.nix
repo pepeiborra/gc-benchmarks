@@ -21,7 +21,7 @@ in stdenv.mkDerivation {
   buildPhase = "${shakeBuilder}/bin/Shake -j1 -V";
   installPhase = "${shakeBuilder}/bin/Shake install -j1";
   buildInputs = [
-    haskell.compiler.ghc881NonMoving
+    haskell.compiler.ghc891NonMoving
     plotutils
     coreutils
     pandoc
