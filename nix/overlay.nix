@@ -17,7 +17,7 @@ let
     };
     localHackageOverrides = sel: sup:
         { haskell-src-exts = sel.callHackage "haskell-src-exts" "1.20.1" {};
-          # fix the nixpkgs configuration for 8.8.1
+          # fix the nixpkgs configuration for 8.9
           unordered-containers = sel.callHackage "unordered-containers" "0.2.10.0" {};
           # overriding mkDerivation leads to circular recursion for reasons unknown
           # mkDerivation = drv: sup.mkDerivation (drv // { jailbreak = true; doHaddock = false;});
@@ -27,7 +27,7 @@ in
     headHackagePatches = callPackage patchScript { patches = patchDir; };
     headHackageOverrides = callPackage haskell.headHackagePatches {};
     compiler = nixpkgsSup.haskell.compiler // {
-      ghc881NonMoving = callPackage ./8.8.1.nonMoving.nix {
+      ghc891NonMoving = callPackage ./8.9.1.nonMoving.nix {
             bootPkgs = haskell.packages.ghc863Binary;
             inherit (buildPackages.python3Packages) sphinx;
             buildLlvmPackages = buildPackages.llvmPackages_7;
@@ -35,10 +35,10 @@ in
           };
       };
     packages = nixpkgsSup.haskell.packages // {
-      ghc881NonMoving=
+      ghc891NonMoving=
         (callNonMovingHaskellPackage "${<nixpkgs>}/pkgs/development/haskell-modules" {
-          buildHaskellPackages = buildPackages.haskell.packages.ghc881NonMoving;
-          ghc = buildPackages.haskell.compiler.ghc881NonMoving;
+          buildHaskellPackages = buildPackages.haskell.packages.ghc891NonMoving;
+          ghc = buildPackages.haskell.compiler.ghc891NonMoving;
           compilerConfig = callNonMovingHaskellPackage "${<nixpkgs>}/pkgs/development/haskell-modules/configuration-ghc-8.8.x.nix" { };
         }).extend(lib.composeExtensions localHackageOverrides haskell.headHackageOverrides) ;
     };
