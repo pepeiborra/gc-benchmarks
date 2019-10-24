@@ -27,7 +27,7 @@
 , # Whetherto build terminfo.
   enableTerminfo ? !stdenv.targetPlatform.isWindows
 
-, version ? "8.9.20191005"
+, version ? "8.9.20191023"
 , # What flavour to build. An empty string indicates no
   # specific flavour and falls back to ghc default values.
   ghcFlavour ? stdenv.lib.optionalString (stdenv.targetPlatform != stdenv.hostPlatform)
@@ -91,22 +91,14 @@ stdenv.mkDerivation (rec {
 
   src = fetchgit {
     url = "https://gitlab.haskell.org/ghc/ghc.git/";
-    rev = "2d8d4cce157aa4a9d1c7b24e4dfde4fe470e5178";
-    sha256 = "06mgcw5jz59jvprahfcaxnnrjl4ipk8lkwwij3w8pz5jsxfx62ql";
+    rev = "7f72b540288bbdb32a6750dd64b9d366501ed10c";
+    sha256 = "16fd0gv18q491312iqm7fhwp4p11bj5xrpap58gh4dp15n6q3gs9";
     fetchSubmodules = true;
   };
 
   outputs = [ "out" "doc" ];
 
-  patches = [
-    (fetchpatch { # https://github.com/haskell/haddock/issues/900
-     url = "https://patch-diff.githubusercontent.com/raw/haskell/haddock/pull/983.diff";
-     name = "loadpluginsinmodules.diff";
-     sha256 = "0bvvv0zsfq2581zsir97zfkggc1kkircbbajc2fz3b169ycpbha1";
-     extraPrefix = "utils/haddock/";
-     stripLen = 1;
-   })
-  ];
+  patches = [];
 
   postPatch = "patchShebangs .";
 
